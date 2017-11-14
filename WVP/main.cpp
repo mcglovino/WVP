@@ -26,9 +26,9 @@ ID3D11InputLayout* vertLayout;
 ID3D11Buffer* cbPerObjectBuffer;
 
 //for background colours
-float red = 0.0f;
-float green = 0.0f;
-float blue = 0.0f;
+float red = 1.0f;
+float green = 1.0f;
+float blue = 1.0f;
 int colourmodr = 1;
 int colourmodg = 1;
 int colourmodb = 1;
@@ -44,6 +44,9 @@ const int Height = 800;
 
 //world view declarations
 XMMATRIX WVP;
+//cube objects
+XMMATRIX cube1;
+XMMATRIX cube2;
 XMMATRIX World;
 XMMATRIX camView;
 XMMATRIX camProjection;
@@ -51,6 +54,12 @@ XMMATRIX camProjection;
 XMVECTOR camPosition;
 XMVECTOR camTarget;
 XMVECTOR camUp;
+
+//for translating, rotating and scaling world objects
+XMMATRIX Rotation;
+XMMATRIX Scale;
+XMMATRIX Translation;
+float rot = 0.01f;
 
 //Function Prototypes//
 //initialize direct3D
@@ -98,7 +107,7 @@ struct Vertex	//Overloaded Vertex Structure
 D3D11_INPUT_ELEMENT_DESC layout[] =
 {
 	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },  
-	{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },  
+	{ "COLOUR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },  
 };
 UINT numElements = ARRAYSIZE(layout);
 
@@ -341,24 +350,48 @@ bool InitScene()
 	//Create the vertex buffer
 	Vertex v[] =
 	{
-		Vertex( -0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f ),
-		Vertex( -0.5f,  0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f ),
-		Vertex(  0.5f,  0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 1.0f ),
-		Vertex(  0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f ),
-		Vertex(  0.0f,  1.0f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f ),
+		Vertex(-1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, blue),
+		Vertex(-1.0f, 1.0f, -1.0f, 0.0f, red, 0.0f, blue),
+		Vertex(1.0f, 1.0f, -1.0f, 0.0f, 0.0f, green, blue),
+		Vertex(1.0f, -1.0f, -1.0f, 1.0f, red, 0.0f, blue),
+		Vertex(-1.0f, -1.0f, 1.0f, 0.0f, red, green, blue),
+		Vertex(-1.0f, 1.0f, 1.0f, 1.0f, red, green, blue),
+		Vertex(1.0f, 1.0f, 1.0f, 1.0f, 0.0f, green, blue),
+		Vertex(1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, blue),
 	};
 
+	//index list, verticies that make up faces
 	DWORD indices[] = {
+		// front face
 		0, 1, 2,
 		0, 2, 3,
-		2, 1, 4,
+
+		// back face
+		4, 6, 5,
+		4, 7, 6,
+
+		// left face
+		4, 5, 1,
+		4, 1, 0,
+
+		// right face
+		3, 2, 6,
+		3, 6, 7,
+
+		// top face
+		1, 5, 6,
+		1, 6, 2,
+
+		// bottom face
+		4, 0, 3,
+		4, 3, 7
 	};
 
 	D3D11_BUFFER_DESC indexBufferDesc;
 	ZeroMemory( &indexBufferDesc, sizeof(indexBufferDesc) );
 
 	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD) * 3 * 3;
+	indexBufferDesc.ByteWidth = sizeof(DWORD) * 12 * 3;
 	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	indexBufferDesc.CPUAccessFlags = 0;
 	indexBufferDesc.MiscFlags = 0;
@@ -375,7 +408,7 @@ bool InitScene()
 	ZeroMemory( &vertexBufferDesc, sizeof(vertexBufferDesc) );
 
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof( Vertex ) * 5;
+	vertexBufferDesc.ByteWidth = sizeof( Vertex ) * 8;
 	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vertexBufferDesc.CPUAccessFlags = 0;
 	vertexBufferDesc.MiscFlags = 0;
@@ -428,7 +461,7 @@ bool InitScene()
 	hr = Dev->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
 
 	//Camera information
-	camPosition = XMVectorSet( 0.0f, 0.0f, -2.0f, 0.0f );
+	camPosition = XMVectorSet( 0.0f, 3.0f, -8.0f, 0.0f );
 	camTarget = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f );
 	camUp = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
 
@@ -445,10 +478,38 @@ bool InitScene()
 //anything that changes in scene
 void UpdateScene()
 {
+	//rotation of cubes
+	rot += 0.0005f;
+	if (rot > 6.26f)
+	{
+		rot = 0.0f;
+	}
+
+	//Reset cube1
+	cube1 = XMMatrixIdentity();
+
+	//Define cube1's world space matrix
+	XMVECTOR rotaxis = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	Rotation = XMMatrixRotationAxis(rotaxis, rot);
+	Translation = XMMatrixTranslation(0.0f, 0.0f, 4.0f);
+
+	//Set cube1's world space using the transformations
+	cube1 = Translation * Rotation;
+
+	//Reset cube2
+	cube2 = XMMatrixIdentity();
+
+	//Define cube2's world space matrix
+	Rotation = XMMatrixRotationAxis(rotaxis, -rot);
+	Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
+
+	//Set cube2's world space matrix
+	cube2 = Rotation * Scale;
+
 	//Update the colours of our scene
-	red += colourmodr * 0.00005f;
-	green += colourmodg * 0.00002f;
-	blue += colourmodb * 0.00001f;
+	red += colourmodr * 0.0005f;
+	green += colourmodg * 0.0002f;
+	blue += colourmodb * 0.0001f;
 
 	//when it reaches edge conditions, flips colour movement
 	if (red >= 1.0f || red <= 0.0f)
@@ -469,19 +530,24 @@ void DrawScene()
 	//Refresh the Depth/Stencil view
 	DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	//Set the World/View/Projection matrix, then send it to constant buffer in effect file
+	//Set the WVP matrix and send it to the constant buffer in effect file
 	World = XMMatrixIdentity();
-	
-	WVP = World * camView * camProjection;
-	//set buffers of WVP matrix to transpose of the matrix
-	cbPerObj.WVP = XMMatrixTranspose(WVP);	
-	//update applications constant buffers, cbPerObj containing updated WVP matrix
-	DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0 );
-	//set the vertex shaders constant buffers to that of the applications constant buffers
-	DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
+	WVP = cube1 * camView * camProjection;
+	cbPerObj.WVP = XMMatrixTranspose(WVP);
+	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
+	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 
-	//Draw the shapes
-	DevCon->DrawIndexed( 9, 0, 0 );
+	//Draw the first cube
+	DevCon->DrawIndexed(36, 0, 0);
+
+	World = XMMatrixIdentity();
+	WVP = cube2 * camView * camProjection;
+	cbPerObj.WVP = XMMatrixTranspose(WVP);
+	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
+	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+
+	//Draw the second cube
+	DevCon->DrawIndexed(36, 0, 0);
 
 	//Present the backbuffer to the screen
 	SwapChain->Present(0, 0);
