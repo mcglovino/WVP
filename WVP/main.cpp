@@ -27,8 +27,8 @@ ID3D11Buffer* cbPerObjectBuffer;
 
 //for background colours
 float red = 1.0f;
-float green = 1.0f;
-float blue = 1.0f;
+float green = 0.2f;
+float blue = 0.5f;
 int colourmodr = 1;
 int colourmodg = 1;
 int colourmodb = 1;
@@ -47,6 +47,8 @@ XMMATRIX WVP;
 //cube objects
 XMMATRIX cube1;
 XMMATRIX cube2;
+XMMATRIX cube3;
+XMMATRIX cube4;
 XMMATRIX World;
 XMMATRIX camView;
 XMMATRIX camProjection;
@@ -350,14 +352,14 @@ bool InitScene()
 	//Create the vertex buffer
 	Vertex v[] =
 	{
-		Vertex(-1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, blue),
-		Vertex(-1.0f, 1.0f, -1.0f, 0.0f, red, 0.0f, blue),
-		Vertex(1.0f, 1.0f, -1.0f, 0.0f, 0.0f, green, blue),
-		Vertex(1.0f, -1.0f, -1.0f, 1.0f, red, 0.0f, blue),
-		Vertex(-1.0f, -1.0f, 1.0f, 0.0f, red, green, blue),
-		Vertex(-1.0f, 1.0f, 1.0f, 1.0f, red, green, blue),
-		Vertex(1.0f, 1.0f, 1.0f, 1.0f, 0.0f, green, blue),
-		Vertex(1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, blue),
+		Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1, 1.0f),
+		Vertex(-1.0f, 1.0f, -1.0f, 0.0f, 1, 0.0f, 1.0f),
+		Vertex(1.0f, 1.0f, -1.0f, 0.0f, green, blue, 1.0f),
+		Vertex(1.0f, -1.0f, -1.0f, red, green, 0.0f, 1.0f),
+		Vertex(-1.0f, -1.0f, 1.0f, 0.0f, 1, 1, 1.0f),
+		Vertex(-1.0f, 1.0f, 1.0f, 0.0f, green, blue, 1.0f),
+		Vertex(1.0f, 1.0f, 1.0f, red, green, blue, 1.0f),
+		Vertex(1.0f, -1.0f, 1.0f, red, 0.0f, 0.0f, 1.0f),
 	};
 
 	//index list, verticies that make up faces
@@ -461,7 +463,7 @@ bool InitScene()
 	hr = Dev->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
 
 	//Camera information
-	camPosition = XMVectorSet( 0.0f, 3.0f, -8.0f, 0.0f );
+	camPosition = XMVectorSet( 0.0f, 4.0f, -10.0f, 0.0f );
 	camTarget = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f );
 	camUp = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
 
@@ -479,19 +481,20 @@ bool InitScene()
 void UpdateScene()
 {
 	//rotation of cubes
-	rot += 0.0005f;
+	rot -= 0.005f;
 	if (rot > 6.26f)
 	{
 		rot = 0.0f;
 	}
 
+	XMVECTOR rotaxis = XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f);
+
 	//Reset cube1
 	cube1 = XMMatrixIdentity();
 
 	//Define cube1's world space matrix
-	XMVECTOR rotaxis = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	Rotation = XMMatrixRotationAxis(rotaxis, rot);
-	Translation = XMMatrixTranslation(0.0f, 0.0f, 4.0f);
+	Translation = XMMatrixTranslation(0.0f, 0.0f, 5.0f);
 
 	//Set cube1's world space using the transformations
 	cube1 = Translation * Rotation;
@@ -506,10 +509,35 @@ void UpdateScene()
 	//Set cube2's world space matrix
 	cube2 = Rotation * Scale;
 
+	//Reset cube3
+	cube3 = XMMatrixIdentity();
+	rotaxis = XMVectorSet(1.0f, -0.9f, 0.2f, 0.3f);
+	//Define cube3's world space matrix
+	Rotation = XMMatrixRotationAxis(rotaxis, rot);
+	Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
+
+	//Set cube3's world space matrix
+	cube3 = Rotation * Scale;
+
 	//Update the colours of our scene
 	red += colourmodr * 0.0005f;
 	green += colourmodg * 0.0002f;
-	blue += colourmodb * 0.0001f;
+	blue += colourmodb * 0.0002f;
+
+	//Reset cube4
+	cube4 = XMMatrixIdentity();
+	rotaxis = XMVectorSet(0.5f, 0.4f, -0.2f, -0.3f);
+	//Define cube4's world space matrix
+	Rotation = XMMatrixRotationAxis(rotaxis, rot);
+	Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
+
+	//Set cube4's world space matrix
+	cube4 = Rotation * Scale;
+
+	//Update the colours of our scene
+	red += colourmodr * 0.0005f;
+	green += colourmodg * 0.0002f;
+	blue += colourmodb * 0.0002f;
 
 	//when it reaches edge conditions, flips colour movement
 	if (red >= 1.0f || red <= 0.0f)
@@ -531,7 +559,6 @@ void DrawScene()
 	DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	//Set the WVP matrix and send it to the constant buffer in effect file
-	World = XMMatrixIdentity();
 	WVP = cube1 * camView * camProjection;
 	cbPerObj.WVP = XMMatrixTranspose(WVP);
 	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
@@ -540,13 +567,28 @@ void DrawScene()
 	//Draw the first cube
 	DevCon->DrawIndexed(36, 0, 0);
 
-	World = XMMatrixIdentity();
 	WVP = cube2 * camView * camProjection;
 	cbPerObj.WVP = XMMatrixTranspose(WVP);
 	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
 	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 
 	//Draw the second cube
+	DevCon->DrawIndexed(36, 0, 0);
+
+	WVP = cube3 * camView * camProjection;
+	cbPerObj.WVP = XMMatrixTranspose(WVP);
+	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
+	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+
+	//Draw the fourth cube
+	DevCon->DrawIndexed(36, 0, 0);
+
+	WVP = cube4 * camView * camProjection;
+	cbPerObj.WVP = XMMatrixTranspose(WVP);
+	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
+	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+
+	//Draw the third cube
 	DevCon->DrawIndexed(36, 0, 0);
 
 	//Present the backbuffer to the screen
