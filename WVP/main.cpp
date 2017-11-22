@@ -49,11 +49,11 @@ const int Height = 800;
 //world view declarations
 XMMATRIX WVP;
 //cube objects
-XMMATRIX cube1;
-XMMATRIX cube2;
-XMMATRIX cube3;
-XMMATRIX cube4;
-XMMATRIX World;
+//XMMATRIX cube1;
+//XMMATRIX cube2;
+//XMMATRIX cube3;
+//XMMATRIX cube4;
+//XMMATRIX World;
 XMMATRIX camView;
 XMMATRIX camProjection;
 
@@ -65,13 +65,14 @@ XMVECTOR camUp;
 XMMATRIX Rotation;
 XMMATRIX Scale;
 XMMATRIX Translation;
-float rot = 0.01f;
+//float rot = 0.01f;
 
 //Function Prototypes//
 //initialize direct3D
 bool InitializeDirect3d11App(HINSTANCE hInstance);
 //releases objects to prevent memory leaks
 void CleanUp();
+
 bool InitScene();
 void UpdateScene();
 void DrawScene();
@@ -116,6 +117,142 @@ D3D11_INPUT_ELEMENT_DESC layout[] =
 	{ "COLOUR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },  
 };
 UINT numElements = ARRAYSIZE(layout);
+
+//class
+class _Object
+{
+public:
+
+	//XMMATRIX WVP;
+	XMMATRIX obj;
+	float rot = 0.01f;
+	XMMATRIX Rotation;
+	XMMATRIX Scale;
+	XMMATRIX Translation;
+
+	void Scene()
+	{
+		//Create the vertex buffer
+		Vertex v[] =
+		{
+			Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1, 1.0f),
+			Vertex(-1.0f, 1.0f, -1.0f, 0.0f, 1, 0.0f, 1.0f),
+			Vertex(1.0f, 1.0f, -1.0f, 0.0f, green, blue, 1.0f),
+			Vertex(1.0f, -1.0f, -1.0f, red, green, 0.0f, 1.0f),
+			Vertex(-1.0f, -1.0f, 1.0f, 0.0f, 1, 1, 1.0f),
+			Vertex(-1.0f, 1.0f, 1.0f, 0.0f, green, blue, 1.0f),
+			Vertex(1.0f, 1.0f, 1.0f, red, green, blue, 1.0f),
+			Vertex(1.0f, -1.0f, 1.0f, red, 0.0f, 0.0f, 1.0f),
+		};
+
+		//index list, verticies that make up faces
+		DWORD indices[] = {
+			// front face
+			0, 1, 2,
+			0, 2, 3,
+
+			// back face
+			4, 6, 5,
+			4, 7, 6,
+
+			// left face
+			4, 5, 1,
+			4, 1, 0,
+
+			// right face
+			3, 2, 6,
+			3, 6, 7,
+
+			// top face
+			1, 5, 6,
+			1, 6, 2,
+
+			// bottom face
+			4, 0, 3,
+			4, 3, 7
+		};
+
+		D3D11_BUFFER_DESC indexBufferDesc;
+		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+
+		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		indexBufferDesc.ByteWidth = sizeof(DWORD) * 12 * 3;
+		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		indexBufferDesc.CPUAccessFlags = 0;
+		indexBufferDesc.MiscFlags = 0;
+
+		D3D11_SUBRESOURCE_DATA iinitData;
+
+		iinitData.pSysMem = indices;
+		Dev->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
+
+		DevCon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+
+		D3D11_BUFFER_DESC vertexBufferDesc;
+		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
+
+		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		vertexBufferDesc.ByteWidth = sizeof(Vertex) * 8;
+		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vertexBufferDesc.CPUAccessFlags = 0;
+		vertexBufferDesc.MiscFlags = 0;
+
+		D3D11_SUBRESOURCE_DATA vertexBufferData;
+
+		ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+		vertexBufferData.pSysMem = v;
+		hr = Dev->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &squareVertBuffer);
+
+		//Set the vertex buffer
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		DevCon->IASetVertexBuffers(0, 1, &squareVertBuffer, &stride, &offset);
+
+		//Create the Input Layout
+		hr = Dev->CreateInputLayout(layout, numElements, VS_Buffer->GetBufferPointer(),
+			VS_Buffer->GetBufferSize(), &vertLayout);
+
+		//Set the Input Layout
+		DevCon->IASetInputLayout(vertLayout);
+	}
+	void Update()
+	{
+		rot -= 0.05f;
+		if (rot > 6.26f)
+		{
+			rot = 0.0f;
+		}
+
+		XMVECTOR rotaxis = XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f);
+
+		//Reset obj
+		obj = XMMatrixIdentity();
+
+		//Define obj's world space matrix
+		Rotation = XMMatrixRotationAxis(rotaxis, rot);
+		Translation = XMMatrixTranslation(0.0f, 0.0f, 5.0f);
+
+		//Set obj's world space using the transformations
+		obj = Translation * Rotation;
+	}
+
+	void Draw()
+	{
+		//Set the WVP matrix and send it to the constant buffer in effect file
+		WVP = obj * camView * camProjection;
+		cbPerObj.WVP = XMMatrixTranspose(WVP);
+		DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
+		DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+
+		//Draw the obj
+		DevCon->DrawIndexed(36, 0, 0);
+	}
+};
+
+//array of Objects
+_Object Objs[3] = {};
+
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance,
@@ -353,7 +490,7 @@ bool InitScene()
 	DevCon->VSSetShader(VS, 0, 0);
 	DevCon->PSSetShader(PS, 0, 0);
 
-	//Create the vertex buffer
+	/*//Create the vertex buffer
 	Vertex v[] =
 	{
 		Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1, 1.0f),
@@ -436,6 +573,14 @@ bool InitScene()
 
 	//Set the Input Layout
 	DevCon->IASetInputLayout( vertLayout );
+	///////
+	*/
+
+	for (int i = 0; i < sizeof(Objs); i += 1)
+	{
+		Objs[i].Scene();
+	}
+	//Objs[0].Scene();
 
 	//Set Primitive Topology
 	DevCon->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
@@ -487,7 +632,7 @@ void UpdateScene()
 
 	TickCount = TickCountT;
 
-	//rotation of cubes
+	/*//rotation of cubes
 	rot -= 0.05f;
 	if (rot > 6.26f)
 	{
@@ -539,7 +684,13 @@ void UpdateScene()
 	Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
 
 	//Set cube4's world space matrix
-	cube4 = Rotation * Scale;
+	cube4 = Rotation * Scale;*/
+
+	for (int i = 0; i < sizeof(Objs); i += 1)
+	{
+		Objs[i].Update();
+	}
+	//Objs[0].Update();
 
 	//Update the colours of our scene
 	red += colourmodr * 0.0005f;
@@ -564,7 +715,7 @@ void DrawScene()
 	//Refresh the Depth/Stencil view
 	DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	//Set the WVP matrix and send it to the constant buffer in effect file
+	/*//Set the WVP matrix and send it to the constant buffer in effect file
 	WVP = cube1 * camView * camProjection;
 	cbPerObj.WVP = XMMatrixTranspose(WVP);
 	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
@@ -594,8 +745,14 @@ void DrawScene()
 	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
 	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 
-	//Draw the third cube
-	DevCon->DrawIndexed(36, 0, 0);
+	//Draw the fourth cube
+	DevCon->DrawIndexed(36, 0, 0);*/
+
+	for (int i = 0; i < sizeof(Objs); i += 1)
+	{
+		Objs[i].Draw();
+	}
+	//Objs[0].Draw();
 
 	//Present the backbuffer to the screen
 	SwapChain->Present(0, 0);
