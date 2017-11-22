@@ -25,6 +25,10 @@ ID3D10Blob* PS_Buffer;
 ID3D11InputLayout* vertLayout;
 ID3D11Buffer* cbPerObjectBuffer;
 
+//for frame rate stabilisation
+static int TickCount;
+static int TickCountT;
+
 //for background colours
 float red = 1.0f;
 float green = 0.2f;
@@ -480,8 +484,11 @@ bool InitScene()
 //anything that changes in scene
 void UpdateScene()
 {
+
+	TickCount = TickCountT;
+
 	//rotation of cubes
-	rot -= 0.005f;
+	rot -= 0.05f;
 	if (rot > 6.26f)
 	{
 		rot = 0.0f;
@@ -550,7 +557,6 @@ void UpdateScene()
 
 void DrawScene()
 {
-
 	//Clear our backbuffer to colour
 	D3DXCOLOR bgcolour(red, green, blue, 1.0f);
 	DevCon->ClearRenderTargetView(renderTargetView, bgcolour);
@@ -597,6 +603,11 @@ void DrawScene()
 
 //keeps the programming running
 int messageloop(){
+
+	//initial setting of tickcount
+	TickCount = GetTickCount();
+	TickCountT = GetTickCount();
+
 	//structure of windows message
 	MSG msg;
 	//clears a structure
@@ -622,8 +633,12 @@ int messageloop(){
 			DispatchMessage(&msg);
 		}
 		//run game code
-		else{           
-			UpdateScene();
+		else{    
+			TickCountT = GetTickCount();
+			if (TickCountT - TickCount > 10)
+			{
+				UpdateScene();
+			}
 			DrawScene();
 		}
 	}
