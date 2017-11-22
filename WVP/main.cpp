@@ -130,6 +130,11 @@ public:
 	XMMATRIX Scale;
 	XMMATRIX Translation;
 
+	float rotX  = 1;
+	float rotY = 1;
+	float rotZ = 0;
+
+
 	void Scene()
 	{
 		//Create the vertex buffer
@@ -224,7 +229,7 @@ public:
 			rot = 0.0f;
 		}
 
-		XMVECTOR rotaxis = XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f);
+		XMVECTOR rotaxis = XMVectorSet(rotX, rotY, rotZ, 0.0f);
 
 		//Reset obj
 		obj = XMMatrixIdentity();
@@ -248,11 +253,17 @@ public:
 		//Draw the obj
 		DevCon->DrawIndexed(36, 0, 0);
 	}
+
+	void setRot(float X, float Y, float Z)
+	{
+		rotX = X;
+		rotY = Y;
+		rotZ = Z;
+	}
 };
 
 //array of Objects
 _Object Objs[3] = {};
-
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance,
@@ -576,7 +587,7 @@ bool InitScene()
 	///////
 	*/
 
-	for (int i = 0; i < sizeof(Objs); i += 1)
+	for (int i = 0; i < 3; i += 1)
 	{
 		Objs[i].Scene();
 	}
@@ -686,7 +697,7 @@ void UpdateScene()
 	//Set cube4's world space matrix
 	cube4 = Rotation * Scale;*/
 
-	for (int i = 0; i < sizeof(Objs); i += 1)
+	for (int i = 0; i < 3; i += 1)
 	{
 		Objs[i].Update();
 	}
@@ -748,7 +759,7 @@ void DrawScene()
 	//Draw the fourth cube
 	DevCon->DrawIndexed(36, 0, 0);*/
 
-	for (int i = 0; i < sizeof(Objs); i += 1)
+	for (int i = 0; i < 3; i += 1)
 	{
 		Objs[i].Draw();
 	}
@@ -760,6 +771,10 @@ void DrawScene()
 
 //keeps the programming running
 int messageloop(){
+
+	Objs[0].setRot(1, 1, 0);
+	Objs[1].setRot(0, 1, 0);
+	Objs[2].setRot(1, 0, 0);
 
 	//initial setting of tickcount
 	TickCount = GetTickCount();
