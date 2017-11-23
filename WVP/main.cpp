@@ -126,6 +126,7 @@ public:
 	//XMMATRIX WVP;
 	XMMATRIX obj;
 	float rot = 0.01f;
+	float rotmod = 0.05f;
 	XMMATRIX Rotation;
 	XMMATRIX Scale;
 	XMMATRIX Translation;
@@ -133,6 +134,10 @@ public:
 	float rotX  = 1;
 	float rotY = 1;
 	float rotZ = 0;
+
+	float transX = 0;
+	float transY = 0;
+	float transZ = 0;
 
 
 	void Scene()
@@ -223,7 +228,7 @@ public:
 	}
 	void Update()
 	{
-		rot -= 0.05f;
+		rot -= rotmod;
 		if (rot > 6.26f)
 		{
 			rot = 0.0f;
@@ -236,7 +241,7 @@ public:
 
 		//Define obj's world space matrix
 		Rotation = XMMatrixRotationAxis(rotaxis, rot);
-		Translation = XMMatrixTranslation(0.0f, 0.0f, 5.0f);
+		Translation = XMMatrixTranslation(transX, transY, transZ);
 
 		//Set obj's world space using the transformations
 		obj = Translation * Rotation;
@@ -254,16 +259,24 @@ public:
 		DevCon->DrawIndexed(36, 0, 0);
 	}
 
-	void setRot(float X, float Y, float Z)
+	void setRot(float X, float Y, float Z, int rotmodsign)
 	{
 		rotX = X;
 		rotY = Y;
 		rotZ = Z;
+		rotmod = rotmod * rotmodsign;
+	}
+
+	void setTranslate(float X, float Y, float Z)
+	{
+		transX = X;
+		transY = Y;
+		transZ = Z;
 	}
 };
 
 //array of Objects
-_Object Objs[3] = {};
+_Object Objs[9] = {};
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance,
@@ -501,97 +514,13 @@ bool InitScene()
 	DevCon->VSSetShader(VS, 0, 0);
 	DevCon->PSSetShader(PS, 0, 0);
 
-	/*//Create the vertex buffer
-	Vertex v[] =
-	{
-		Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1, 1.0f),
-		Vertex(-1.0f, 1.0f, -1.0f, 0.0f, 1, 0.0f, 1.0f),
-		Vertex(1.0f, 1.0f, -1.0f, 0.0f, green, blue, 1.0f),
-		Vertex(1.0f, -1.0f, -1.0f, red, green, 0.0f, 1.0f),
-		Vertex(-1.0f, -1.0f, 1.0f, 0.0f, 1, 1, 1.0f),
-		Vertex(-1.0f, 1.0f, 1.0f, 0.0f, green, blue, 1.0f),
-		Vertex(1.0f, 1.0f, 1.0f, red, green, blue, 1.0f),
-		Vertex(1.0f, -1.0f, 1.0f, red, 0.0f, 0.0f, 1.0f),
-	};
-
-	//index list, verticies that make up faces
-	DWORD indices[] = {
-		// front face
-		0, 1, 2,
-		0, 2, 3,
-
-		// back face
-		4, 6, 5,
-		4, 7, 6,
-
-		// left face
-		4, 5, 1,
-		4, 1, 0,
-
-		// right face
-		3, 2, 6,
-		3, 6, 7,
-
-		// top face
-		1, 5, 6,
-		1, 6, 2,
-
-		// bottom face
-		4, 0, 3,
-		4, 3, 7
-	};
-
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory( &indexBufferDesc, sizeof(indexBufferDesc) );
-
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD) * 12 * 3;
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA iinitData;
-
-	iinitData.pSysMem = indices;
-	Dev->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
-
-	DevCon->IASetIndexBuffer( squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory( &vertexBufferDesc, sizeof(vertexBufferDesc) );
-
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof( Vertex ) * 8;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA vertexBufferData; 
-
-	ZeroMemory( &vertexBufferData, sizeof(vertexBufferData) );
-	vertexBufferData.pSysMem = v;
-	hr = Dev->CreateBuffer( &vertexBufferDesc, &vertexBufferData, &squareVertBuffer);
-
-	//Set the vertex buffer
-	UINT stride = sizeof( Vertex );
-	UINT offset = 0;
-	DevCon->IASetVertexBuffers( 0, 1, &squareVertBuffer, &stride, &offset );
-
-	//Create the Input Layout
-	hr = Dev->CreateInputLayout( layout, numElements, VS_Buffer->GetBufferPointer(), 
-		VS_Buffer->GetBufferSize(), &vertLayout );
-
-	//Set the Input Layout
-	DevCon->IASetInputLayout( vertLayout );
-	///////
-	*/
-
-	for (int i = 0; i < 3; i += 1)
+	//Run scene script for all object
+	//size of returns sie in bytes
+	//by dividing by the size of one of them, it leaves the size of the array
+	for (int i = 0; i < sizeof(Objs)/ sizeof(Objs[0]); i ++)
 	{
 		Objs[i].Scene();
 	}
-	//Objs[0].Scene();
 
 	//Set Primitive Topology
 	DevCon->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
@@ -643,65 +572,11 @@ void UpdateScene()
 
 	TickCount = TickCountT;
 
-	/*//rotation of cubes
-	rot -= 0.05f;
-	if (rot > 6.26f)
-	{
-		rot = 0.0f;
-	}
-
-	XMVECTOR rotaxis = XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f);
-
-	//Reset cube1
-	cube1 = XMMatrixIdentity();
-
-	//Define cube1's world space matrix
-	Rotation = XMMatrixRotationAxis(rotaxis, rot);
-	Translation = XMMatrixTranslation(0.0f, 0.0f, 5.0f);
-
-	//Set cube1's world space using the transformations
-	cube1 = Translation * Rotation;
-
-	//Reset cube2
-	cube2 = XMMatrixIdentity();
-
-	//Define cube2's world space matrix
-	Rotation = XMMatrixRotationAxis(rotaxis, -rot);
-	Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
-
-	//Set cube2's world space matrix
-	cube2 = Rotation * Scale;
-
-	//Reset cube3
-	cube3 = XMMatrixIdentity();
-	rotaxis = XMVectorSet(1.0f, -0.9f, 0.2f, 0.3f);
-	//Define cube3's world space matrix
-	Rotation = XMMatrixRotationAxis(rotaxis, rot);
-	Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
-
-	//Set cube3's world space matrix
-	cube3 = Rotation * Scale;
-
-	//Update the colours of our scene
-	red += colourmodr * 0.0005f;
-	green += colourmodg * 0.0002f;
-	blue += colourmodb * 0.0002f;
-
-	//Reset cube4
-	cube4 = XMMatrixIdentity();
-	rotaxis = XMVectorSet(0.5f, 0.4f, -0.2f, -0.3f);
-	//Define cube4's world space matrix
-	Rotation = XMMatrixRotationAxis(rotaxis, rot);
-	Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
-
-	//Set cube4's world space matrix
-	cube4 = Rotation * Scale;*/
-
-	for (int i = 0; i < 3; i += 1)
+	//Run update script on all Objects
+	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
 	{
 		Objs[i].Update();
 	}
-	//Objs[0].Update();
 
 	//Update the colours of our scene
 	red += colourmodr * 0.0005f;
@@ -726,44 +601,11 @@ void DrawScene()
 	//Refresh the Depth/Stencil view
 	DevCon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	/*//Set the WVP matrix and send it to the constant buffer in effect file
-	WVP = cube1 * camView * camProjection;
-	cbPerObj.WVP = XMMatrixTranspose(WVP);
-	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
-	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
-
-	//Draw the first cube
-	DevCon->DrawIndexed(36, 0, 0);
-
-	WVP = cube2 * camView * camProjection;
-	cbPerObj.WVP = XMMatrixTranspose(WVP);
-	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
-	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
-
-	//Draw the second cube
-	DevCon->DrawIndexed(36, 0, 0);
-
-	WVP = cube3 * camView * camProjection;
-	cbPerObj.WVP = XMMatrixTranspose(WVP);
-	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
-	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
-
-	//Draw the fourth cube
-	DevCon->DrawIndexed(36, 0, 0);
-
-	WVP = cube4 * camView * camProjection;
-	cbPerObj.WVP = XMMatrixTranspose(WVP);
-	DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
-	DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
-
-	//Draw the fourth cube
-	DevCon->DrawIndexed(36, 0, 0);*/
-
-	for (int i = 0; i < 3; i += 1)
+	//Run Draw script on all Objects
+	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
 	{
 		Objs[i].Draw();
 	}
-	//Objs[0].Draw();
 
 	//Present the backbuffer to the screen
 	SwapChain->Present(0, 0);
@@ -772,9 +614,31 @@ void DrawScene()
 //keeps the programming running
 int messageloop(){
 
-	Objs[0].setRot(1, 1, 0);
-	Objs[1].setRot(0, 1, 0);
-	Objs[2].setRot(1, 0, 0);
+	//rotate
+	Objs[0].setRot(0, 1, 0, 1);
+	Objs[1].setRot(0, 1, 0, 1);
+	Objs[2].setRot(0, 1, 0, 1);
+
+	Objs[3].setRot(1, 1, 0, 1);
+	Objs[4].setRot(0, 1, 0, 1);
+	Objs[5].setRot(1, 0, 0, 1);
+
+	Objs[6].setRot(0.5, 1, 0.5, 1);
+	Objs[7].setRot(0, 1, 0, 1);
+	Objs[8].setRot(0.5, 1, 0, -1);
+
+	//translate
+	Objs[0].setTranslate(2, 2, 5);
+	Objs[1].setTranslate(-2, -2, 9);
+	Objs[2].setTranslate(0, 0, 7);
+
+	Objs[3].setTranslate(0, 0, -5);
+	Objs[4].setTranslate(0, 0, -5);
+	Objs[5].setTranslate(0, 0, -5);
+
+	Objs[6].setTranslate(0, 0, 0.1);
+	Objs[7].setTranslate(0, 0.1, -0.1);
+	Objs[8].setTranslate(0, -0.1, 0);
 
 	//initial setting of tickcount
 	TickCount = GetTickCount();
