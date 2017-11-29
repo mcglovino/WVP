@@ -153,6 +153,7 @@ public:
 	float transY = 0;
 	float transZ = 0;
 
+	LPCWSTR texture = L"smile.jpg";
 
 	void Scene()
 	{
@@ -267,10 +268,21 @@ public:
 		//Set the Input Layout
 		DevCon->IASetInputLayout(vertLayout);
 
-		//load texture
-		hr = D3DX11CreateShaderResourceViewFromFile(Dev, L"smile.jpg",
-			NULL, NULL, &CubesTexture, NULL);
 
+
+		//describe sample state
+		D3D11_SAMPLER_DESC sampDesc;
+		ZeroMemory(&sampDesc, sizeof(sampDesc));
+		sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		sampDesc.MinLOD = 0;
+		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+		//create sample state
+		hr = Dev->CreateSamplerState(&sampDesc, &CubesTexSamplerState);
 		
 	}
 	void Update()
@@ -301,6 +313,7 @@ public:
 		cbPerObj.WVP = XMMatrixTranspose(WVP);
 		DevCon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
 		DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+
 		//for textures
 		DevCon->PSSetShaderResources(0, 1, &CubesTexture);
 		DevCon->PSSetSamplers(0, 1, &CubesTexSamplerState);
@@ -322,6 +335,14 @@ public:
 		transX = X;
 		transY = Y;
 		transZ = Z;
+	}
+
+	void setTexture(LPCWSTR texT)
+	{
+		LPCWSTR texture = texT;
+		//load texture
+		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
+			NULL, NULL, &CubesTexture, NULL);
 	}
 };
 
@@ -548,6 +569,8 @@ void CleanUp()
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
 	cbPerObjectBuffer->Release();
+	CubesTexture->Release();
+	CubesTexSamplerState->Release();
 
 }
 
@@ -614,19 +637,6 @@ bool InitScene()
 	//FOV angle, Aspect ratio, Near cliping, Far cliping
 	camProjection = XMMatrixPerspectiveFovLH( 0.4f*3.14f, Width/Height, 1.0f, 1000.0f);
 
-	//describe sample state
-	D3D11_SAMPLER_DESC sampDesc;
-	ZeroMemory(&sampDesc, sizeof(sampDesc));
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	sampDesc.MinLOD = 0;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	//create sample state
-	hr = Dev->CreateSamplerState(&sampDesc, &CubesTexSamplerState);
 
 	return true;
 }
@@ -704,6 +714,20 @@ int messageloop(){
 	Objs[6].setTranslate(0, 0, 0.1);
 	Objs[7].setTranslate(0, 0.1, -0.1);
 	Objs[8].setTranslate(0, -0.1, 0);
+
+	//texture
+	Objs[0].setTexture(L"cry.jpg");
+	Objs[1].setTexture(L"cry.jpg");
+	Objs[2].setTexture(L"smile.jpg");
+
+	Objs[3].setTexture(L"cry.jpg");
+	Objs[4].setTexture(L"smile.jpg");
+	Objs[5].setTexture(L"smile.jpg");
+
+	Objs[6].setTexture(L"cry.jpg");
+	Objs[7].setTexture(L"cry.jpg");
+	Objs[8].setTexture(L"smile.jpg");
+	
 
 	//initial setting of tickcount
 	TickCount = GetTickCount();
