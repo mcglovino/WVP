@@ -25,8 +25,8 @@ ID3D10Blob* PS_Buffer;
 ID3D11InputLayout* vertLayout;
 ID3D11Buffer* cbPerObjectBuffer;
 //for textures
-ID3D11ShaderResourceView* CubesTexture;
-ID3D11SamplerState* CubesTexSamplerState;
+//ID3D11ShaderResourceView* CubesTexture;
+//ID3D11SamplerState* CubesTexSamplerState;
 
 //for frame rate stabilisation
 static int TickCount;
@@ -50,7 +50,7 @@ const int Width  = 1000;
 const int Height = 1000;
 
 //world view declarations
-XMMATRIX WVP;
+//XMMATRIX WVP;
 //cube objects
 //XMMATRIX cube1;
 //XMMATRIX cube2;
@@ -102,17 +102,6 @@ struct cbPerObject
 
 cbPerObject cbPerObj;
 
-//Vertex Structure and Vertex Layout (Input Layout)//
-/*struct Vertex	//Overloaded Vertex Structure
-{
-	Vertex(){}
-	Vertex(float x, float y, float z,
-		float cr, float cg, float cb, float ca)
-		: pos(x,y,z), colour(cr, cg, cb, ca){}
-
-	XMFLOAT3 pos;
-	XMFLOAT4 colour;
-};*/
 
 struct Vertex	//Overloaded Vertex Structure
 {
@@ -137,7 +126,7 @@ class _Object
 {
 public:
 
-	//XMMATRIX WVP;
+	XMMATRIX WVP;
 	XMMATRIX obj;
 	float rot = 0.01f;
 	float rotmod = 0.05f;
@@ -153,7 +142,11 @@ public:
 	float transY = 0;
 	float transZ = 0;
 
-	LPCWSTR texture = L"smile.jpg";
+	ID3D11ShaderResourceView* CubesTexture;
+	ID3D11SamplerState* CubesTexSamplerState;
+
+	LPCWSTR texture;
+		//= L"smile.jpg";
 
 	void Scene()
 	{
@@ -340,6 +333,7 @@ public:
 	void setTexture(LPCWSTR texT)
 	{
 		LPCWSTR texture = texT;
+
 		//load texture
 		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
 			NULL, NULL, &CubesTexture, NULL);
@@ -569,8 +563,8 @@ void CleanUp()
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
 	cbPerObjectBuffer->Release();
-	CubesTexture->Release();
-	CubesTexSamplerState->Release();
+	//CubesTexture->Release();
+	//CubesTexSamplerState->Release();
 
 }
 
@@ -726,7 +720,7 @@ int messageloop(){
 
 	Objs[6].setTexture(L"cry.jpg");
 	Objs[7].setTexture(L"cry.jpg");
-	Objs[8].setTexture(L"smile.jpg");
+	Objs[8].setTexture(L"cry.jpg");
 	
 
 	//initial setting of tickcount
