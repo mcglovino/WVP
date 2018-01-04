@@ -9,6 +9,9 @@
 #include <d3dx10.h>
 #include <xnamath.h>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
 //Global Declarations - Interfaces//
 IDXGISwapChain* SwapChain; // pointer to swap back and front buffers, preventing scan lines where its bieng drawn (rendering is from back buffer)
 ID3D11Device* Dev; // pointer to direct3D device interface
@@ -184,10 +187,10 @@ public:
 			Vertex(-1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
 
 			// Right Face
-			Vertex(1.0f, -1.0f, -1.0f, 0.0f, 1.0f),
-			Vertex(1.0f,  1.0f, -1.0f, 0.0f, 0.0f),
-			Vertex(1.0f,  1.0f,  1.0f, 1.0f, 0.0f),
-			Vertex(1.0f, -1.0f,  1.0f, 1.0f, 1.0f),
+			Vertex(1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
+			Vertex(1.0f,  1.0f, -1.0f, 0.0f, 1.0f),
+			Vertex(1.0f,  1.0f,  1.0f, 0.0f, 0.0f),
+			Vertex(1.0f, -1.0f,  1.0f, 1.0f, 0.0f),
 		};
 
 		//index list, verticies that make up faces
