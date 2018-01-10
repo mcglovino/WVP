@@ -8,9 +8,14 @@
 #include <d3dx11.h>
 #include <d3dx10.h>
 #include <xnamath.h>
+#include <String>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
+
+const std::string MODEL_PATH = "models/chalet.obj";
+const std::string TEXTURE_PATH = "textures/chalet.jpg";
+
 
 //Global Declarations - Interfaces//
 IDXGISwapChain* SwapChain; // pointer to swap back and front buffers, preventing scan lines where its bieng drawn (rendering is from back buffer)
@@ -345,6 +350,7 @@ public:
 
 //array of Objects
 _Object Objs[9] = {};
+
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance,
