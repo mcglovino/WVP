@@ -58,13 +58,6 @@ const int Width  = 1000;
 const int Height = 1000;
 
 //world view declarations
-//XMMATRIX WVP;
-//cube objects
-//XMMATRIX cube1;
-//XMMATRIX cube2;
-//XMMATRIX cube3;
-//XMMATRIX cube4;
-//XMMATRIX World;
 XMMATRIX camView;
 XMMATRIX camProjection;
 
@@ -78,7 +71,7 @@ XMMATRIX Scale;
 XMMATRIX Translation;
 //float rot = 0.01f;
 
-//Function Prototypes//
+//Function Prototypes
 //initialize direct3D
 bool InitializeDirect3d11App(HINSTANCE hInstance);
 //releases objects to prevent memory leaks
@@ -102,7 +95,7 @@ LRESULT CALLBACK WndProc(HWND hWnd,
 	WPARAM wParam,
 	LPARAM lParam);
 
-//Create effects constant buffer's structure//
+//Create effects constant buffer's structure
 struct cbPerObject
 {
 	XMMATRIX  WVP;
@@ -120,6 +113,7 @@ struct Vertex	//Overloaded Vertex Structure
 
 	XMFLOAT3 pos;
 	XMFLOAT2 texCoord;
+
 };
 
 D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -156,10 +150,52 @@ public:
 	LPCWSTR texture;
 		//= L"smile.jpg";
 
+	std::vector<Vertex> vertices;
+	//std::vector<uint32_t> indices;
+	std::vector<DWORD> indices;
+	ID3D11Buffer* vertexBuffer;
+	ID3D11Device* vertexBufferMemory;
+
+	void loadModel() {
+		tinyobj::attrib_t attrib;
+		std::vector<tinyobj::shape_t> shapes;
+		std::vector<tinyobj::material_t> materials;
+		std::string err;
+
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, MODEL_PATH.c_str())) {
+			throw std::runtime_error(err);
+		}
+
+
+		for (const auto& shape : shapes) {
+			for (const auto& index : shape.mesh.indices) {
+				Vertex vertex = {};
+
+				vertex.pos = {
+					attrib.vertices[3 * index.vertex_index + 0],
+					attrib.vertices[3 * index.vertex_index + 1],
+					attrib.vertices[3 * index.vertex_index + 2]
+				};
+
+				vertex.texCoord = {
+					attrib.texcoords[2 * index.texcoord_index + 0],
+					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+				};
+
+				//vertex.color = { 1.0f, 1.0f, 1.0f };
+
+				vertices.push_back(vertex);
+
+				indices.push_back(indices.size());
+
+			}
+		}
+	}
+
 	void Scene()
 	{
 		//Create the vertex buffer
-		Vertex v[] =
+		/*Vertex v[] =
 		{
 			// Front Face
 			Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 1.0f),
@@ -223,20 +259,29 @@ public:
 			// Right Face
 			20, 21, 22,
 			20, 22, 23
-		};
+		};*/
+
+		loadModel();
+
+		//THINK THIS IS WHATS CAUSING MY PROBLEM
+		Vertex* V = &vertices[0];
+		DWORD* I = &indices[0];
 
 		D3D11_BUFFER_DESC indexBufferDesc;
 		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 
 		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		indexBufferDesc.ByteWidth = sizeof(DWORD) * 12 * 3;
+		//indexBufferDesc.ByteWidth = sizeof(DWORD) * 12 * 3;
+		//indexBufferDesc.ByteWidth = sizeof(DWORD) * indices.size() * 3;
+		indexBufferDesc.ByteWidth = sizeof(DWORD) * sizeof(I) * 3;
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		indexBufferDesc.CPUAccessFlags = 0;
 		indexBufferDesc.MiscFlags = 0;
 
 		D3D11_SUBRESOURCE_DATA iinitData;
 
-		iinitData.pSysMem = indices;
+		iinitData.pSysMem = I;
+		//iinitData.pSysMem = indices;
 		Dev->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
 
 		DevCon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
@@ -246,7 +291,9 @@ public:
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
 		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.ByteWidth = sizeof(Vertex) * 24;
+		//vertexBufferDesc.ByteWidth = sizeof(Vertex) * 24;
+		//vertexBufferDesc.ByteWidth = sizeof(Vertex) * vertices.size();
+		vertexBufferDesc.ByteWidth = sizeof(Vertex) * sizeof(V);
 		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		vertexBufferDesc.CPUAccessFlags = 0;
 		vertexBufferDesc.MiscFlags = 0;
@@ -254,7 +301,8 @@ public:
 		D3D11_SUBRESOURCE_DATA vertexBufferData;
 
 		ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-		vertexBufferData.pSysMem = v;
+		vertexBufferData.pSysMem = V;
+		//vertexBufferData.pSysMem = v;
 		hr = Dev->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &squareVertBuffer);
 
 		//Set the vertex buffer
