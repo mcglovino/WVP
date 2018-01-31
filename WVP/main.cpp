@@ -13,8 +13,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-const std::string MODEL_PATH = "models/chalet.obj";
-const std::string TEXTURE_PATH = "textures/chalet.jpg";
+const std::string MODEL_PATH = "models/box.obj";
+const LPCWSTR TEXTURE_PATH = L"textures/box.jpg";
 
 
 //Global Declarations - Interfaces//
@@ -263,7 +263,6 @@ public:
 
 		loadModel();
 
-		//THINK THIS IS WHATS CAUSING MY PROBLEM
 		Vertex* V = &vertices[0];
 		DWORD* I = &indices[0];
 
@@ -767,17 +766,17 @@ int messageloop(){
 	Objs[8].setTranslate(0, -0.1, 0);
 
 	//texture
-	Objs[0].setTexture(L"cry.jpg");
-	Objs[1].setTexture(L"cry.jpg");
-	Objs[2].setTexture(L"smile.jpg");
+	Objs[0].setTexture(TEXTURE_PATH);
+	Objs[1].setTexture(TEXTURE_PATH);
+	Objs[2].setTexture(TEXTURE_PATH);
 
-	Objs[3].setTexture(L"cry.jpg");
-	Objs[4].setTexture(L"smile.jpg");
-	Objs[5].setTexture(L"smile.jpg");
+	Objs[3].setTexture(TEXTURE_PATH);
+	Objs[4].setTexture(TEXTURE_PATH);
+	Objs[5].setTexture(TEXTURE_PATH);
 
-	Objs[6].setTexture(L"cry.jpg");
-	Objs[7].setTexture(L"cry.jpg");
-	Objs[8].setTexture(L"cry.jpg");
+	Objs[6].setTexture(TEXTURE_PATH);
+	Objs[7].setTexture(TEXTURE_PATH);
+	Objs[8].setTexture(TEXTURE_PATH);
 	
 
 	//initial setting of tickcount
