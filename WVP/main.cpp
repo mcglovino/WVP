@@ -13,8 +13,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-const std::string MODEL_PATH = "models/box.obj";
-const LPCWSTR TEXTURE_PATH = L"textures/box.jpg";
+const LPCWSTR TEXTURE_PATH = L"textures/sphere16.jpg";
+const std::string MODEL_PATH = "models/sphere16.obj";
 
 
 //Global Declarations - Interfaces//
