@@ -272,11 +272,11 @@ public:
 		DevCon->PSSetSamplers(0, 1, &CubesTexSamplerState);
 
 		//Draw the obj
-		DevCon->DrawIndexed(36, 0, 0);
+		DevCon->DrawIndexed(indices.size() * 3, 0, 0);
 	}
 
-	void loadModel() {
 
+	void loadModel() {
 		//texture load
 		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
 			NULL, NULL, &CubesTexture, NULL);
@@ -310,11 +310,13 @@ public:
 
 				vertices.push_back(vertex);
 
+
 				indices.push_back(indices.size());
 
 			}
 		}
 	}
+
 
 	void setRot(float X, float Y, float Z, int rotmodsign)
 	{
@@ -353,6 +355,7 @@ _Object Objs[9] = { {SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH},{ CUBE_TEXTURE_PATH,
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance, 
+
 	LPSTR lpCmdLine,
 	int nShowCmd)
 {
