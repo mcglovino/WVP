@@ -24,19 +24,16 @@ IDXGISwapChain* SwapChain; // pointer to swap back and front buffers, preventing
 ID3D11Device* Dev; // pointer to direct3D device interface
 ID3D11DeviceContext* DevCon; // pointer to direct3D device context
 ID3D11RenderTargetView* renderTargetView; //back buffer, a 2d texture, this is written to and the sent to be rendered on screen
-ID3D11Buffer* squareIndexBuffer;
+//ID3D11Buffer* squareIndexBuffer;
 ID3D11DepthStencilView* depthStencilView;
 ID3D11Texture2D* depthStencilBuffer;
-ID3D11Buffer* squareVertBuffer;
+//ID3D11Buffer* squareVertBuffer;
 ID3D11VertexShader* VS;
 ID3D11PixelShader* PS;
 ID3D10Blob* VS_Buffer;
 ID3D10Blob* PS_Buffer;
-ID3D11InputLayout* vertLayout;
+//ID3D11InputLayout* vertLayout;
 ID3D11Buffer* cbPerObjectBuffer;
-//for textures
-//ID3D11ShaderResourceView* CubesTexture;
-//ID3D11SamplerState* CubesTexSamplerState;
 
 //for frame rate stabilisation
 static int TickCount;
@@ -146,17 +143,20 @@ public:
 	float transY = 0;
 	float transZ = 0;
 
-	ID3D11ShaderResourceView* CubesTexture;
-	ID3D11SamplerState* CubesTexSamplerState;
+	ID3D11ShaderResourceView* Texture;
+	ID3D11SamplerState* TexSamplerState;
 
 	LPCWSTR texture;
 	std::string MODEL_PATH;
 
 	std::vector<Vertex> vertices;
-	//std::vector<uint32_t> indices;
 	std::vector<DWORD> indices;
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Device* vertexBufferMemory;
+
+	ID3D11Buffer* squareIndexBuffer;
+	ID3D11Buffer* squareVertBuffer;
+	ID3D11InputLayout* vertLayout;
 
 	//constructor
 	_Object(LPCWSTR texT, std::string modT) {
@@ -164,9 +164,9 @@ public:
 		MODEL_PATH = modT;
 	}
 
-	void Scene()
+	void Init()
 	{
-		loadModel();
+		//loadModel();
 
 		Vertex* V = &vertices[0];
 		DWORD* I = &indices[0];
@@ -175,9 +175,7 @@ public:
 		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 
 		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		//indexBufferDesc.ByteWidth = sizeof(DWORD) * 12 * 3;
 		indexBufferDesc.ByteWidth = sizeof(DWORD) * indices.size() * 3;
-		//indexBufferDesc.ByteWidth = sizeof(DWORD) * sizeof(I) * 3;
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		indexBufferDesc.CPUAccessFlags = 0;
 		indexBufferDesc.MiscFlags = 0;
@@ -195,9 +193,7 @@ public:
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
 		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		//vertexBufferDesc.ByteWidth = sizeof(Vertex) * 24;
 		vertexBufferDesc.ByteWidth = sizeof(Vertex) * vertices.size();
-		//vertexBufferDesc.ByteWidth = sizeof(Vertex) * sizeof(V);
 		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		vertexBufferDesc.CPUAccessFlags = 0;
 		vertexBufferDesc.MiscFlags = 0;
@@ -206,7 +202,6 @@ public:
 
 		ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 		vertexBufferData.pSysMem = V;
-		//vertexBufferData.pSysMem = v;
 		hr = Dev->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &squareVertBuffer);
 
 		//Set the vertex buffer
@@ -235,9 +230,17 @@ public:
 		sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 		//create sample state
-		hr = Dev->CreateSamplerState(&sampDesc, &CubesTexSamplerState);
-		
+		hr = Dev->CreateSamplerState(&sampDesc, &TexSamplerState);
 	}
+
+	void Init2()
+	{
+		//Set the vertex buffer
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		DevCon->IASetVertexBuffers(0, 1, &squareVertBuffer, &stride, &offset);
+	}
+
 	void Update()
 	{
 		rot -= rotmod;
@@ -261,6 +264,11 @@ public:
 
 	void Draw()
 	{
+		//Reset the vertex buffer
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+		DevCon->IASetVertexBuffers(0, 1, &squareVertBuffer, &stride, &offset);
+
 		//Set the WVP matrix and send it to the constant buffer in effect file
 		WVP = obj * camView * camProjection;
 		cbPerObj.WVP = XMMatrixTranspose(WVP);
@@ -268,8 +276,8 @@ public:
 		DevCon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 
 		//for textures
-		DevCon->PSSetShaderResources(0, 1, &CubesTexture);
-		DevCon->PSSetSamplers(0, 1, &CubesTexSamplerState);
+		DevCon->PSSetShaderResources(0, 1, &Texture);
+		DevCon->PSSetSamplers(0, 1, &TexSamplerState);
 
 		//Draw the obj
 		DevCon->DrawIndexed(indices.size() * 3, 0, 0);
@@ -279,13 +287,18 @@ public:
 	void loadModel() {
 		//texture load
 		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
-			NULL, NULL, &CubesTexture, NULL);
+			NULL, NULL, &Texture, NULL);
 
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
 		std::string err;
 
+		vertices.clear();
+		indices.clear();
+
+		//load object
+		//if it cant, throw error
 		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, MODEL_PATH.c_str())) {
 			throw std::runtime_error(err);
 		}
@@ -305,8 +318,6 @@ public:
 					attrib.texcoords[2 * index.texcoord_index + 0],
 					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
 				};
-
-				//vertex.color = { 1.0f, 1.0f, 1.0f };
 
 				vertices.push_back(vertex);
 
@@ -347,9 +358,9 @@ public:
 };
 
 //array of Objects
-_Object Objs[9] = { {SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH},{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },
-				{ SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH } ,
-				{ SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH } ,{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH } ,{ SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH } };
+_Object Objs[9] = { {CUBE_TEXTURE_PATH,SPHERE_MODEL_PATH},{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },
+				{ CUBE_TEXTURE_PATH,SPHERE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH } ,
+				{ CUBE_TEXTURE_PATH,SPHERE_MODEL_PATH } ,{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH } ,{ CUBE_TEXTURE_PATH,SPHERE_MODEL_PATH } };
 
 
 //Main windows function
@@ -563,18 +574,16 @@ void CleanUp()
 	Dev->Release();
 	DevCon->Release();
 	renderTargetView->Release();
-	squareVertBuffer->Release();
-	squareIndexBuffer->Release();
+	//squareVertBuffer->Release();
+	//squareIndexBuffer->Release();
 	VS->Release();
 	PS->Release();
 	VS_Buffer->Release();
 	PS_Buffer->Release();
-	vertLayout->Release();
+	//vertLayout->Release();
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
 	cbPerObjectBuffer->Release();
-	//CubesTexture->Release();
-	//CubesTexSamplerState->Release();
 
 }
 
@@ -597,7 +606,8 @@ bool InitScene()
 	//by dividing by the size of one of them, it leaves the size of the array
 	for (int i = 0; i < sizeof(Objs)/ sizeof(Objs[0]); i ++)
 	{
-		Objs[i].Scene();
+		Objs[i].loadModel();
+		Objs[i].Init();
 	}
 
 	//Set Primitive Topology
