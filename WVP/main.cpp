@@ -13,8 +13,10 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-const LPCWSTR TEXTURE_PATH = L"textures/sphere16.jpg";
-const std::string MODEL_PATH = "models/sphere16.obj";
+const LPCWSTR SPHERE_TEXTURE_PATH = L"textures/sphere16.mtl";
+const std::string SPHERE_MODEL_PATH = "models/sphere16.obj";
+const LPCWSTR CUBE_TEXTURE_PATH = L"textures/box.jpg";
+const std::string CUBE_MODEL_PATH = "models/cube.obj";
 
 
 //Global Declarations - Interfaces//
@@ -136,8 +138,8 @@ public:
 	XMMATRIX Scale;
 	XMMATRIX Translation;
 
-	float rotX  = 1;
-	float rotY = 1;
+	float rotX  = 0;
+	float rotY = 0;
 	float rotZ = 0;
 
 	float transX = 0;
@@ -148,7 +150,7 @@ public:
 	ID3D11SamplerState* CubesTexSamplerState;
 
 	LPCWSTR texture;
-		//= L"smile.jpg";
+	std::string MODEL_PATH;
 
 	std::vector<Vertex> vertices;
 	//std::vector<uint32_t> indices;
@@ -156,111 +158,14 @@ public:
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Device* vertexBufferMemory;
 
-	void loadModel() {
-		tinyobj::attrib_t attrib;
-		std::vector<tinyobj::shape_t> shapes;
-		std::vector<tinyobj::material_t> materials;
-		std::string err;
-
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, MODEL_PATH.c_str())) {
-			throw std::runtime_error(err);
-		}
-
-
-		for (const auto& shape : shapes) {
-			for (const auto& index : shape.mesh.indices) {
-				Vertex vertex = {};
-
-				vertex.pos = {
-					attrib.vertices[3 * index.vertex_index + 0],
-					attrib.vertices[3 * index.vertex_index + 1],
-					attrib.vertices[3 * index.vertex_index + 2]
-				};
-
-				vertex.texCoord = {
-					attrib.texcoords[2 * index.texcoord_index + 0],
-					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-				};
-
-				//vertex.color = { 1.0f, 1.0f, 1.0f };
-
-				vertices.push_back(vertex);
-
-				indices.push_back(indices.size());
-
-			}
-		}
+	//constructor
+	_Object(LPCWSTR texT, std::string modT) {
+		texture = texT;
+		MODEL_PATH = modT;
 	}
 
 	void Scene()
 	{
-		//Create the vertex buffer
-		/*Vertex v[] =
-		{
-			// Front Face
-			Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 1.0f),
-			Vertex(-1.0f,  1.0f, -1.0f, 0.0f, 0.0f),
-			Vertex(1.0f,  1.0f, -1.0f, 1.0f, 0.0f),
-			Vertex(1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
-
-			// Back Face
-			Vertex(-1.0f, -1.0f, 1.0f, 1.0f, 1.0f),
-			Vertex(1.0f, -1.0f, 1.0f, 0.0f, 1.0f),
-			Vertex(1.0f,  1.0f, 1.0f, 0.0f, 0.0f),
-			Vertex(-1.0f,  1.0f, 1.0f, 1.0f, 0.0f),
-
-			// Top Face
-			Vertex(-1.0f, 1.0f, -1.0f, 0.0f, 1.0f),
-			Vertex(-1.0f, 1.0f,  1.0f, 0.0f, 0.0f),
-			Vertex(1.0f, 1.0f,  1.0f, 1.0f, 0.0f),
-			Vertex(1.0f, 1.0f, -1.0f, 1.0f, 1.0f),
-
-			// Bottom Face
-			Vertex(-1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
-			Vertex(1.0f, -1.0f, -1.0f, 0.0f, 1.0f),
-			Vertex(1.0f, -1.0f,  1.0f, 0.0f, 0.0f),
-			Vertex(-1.0f, -1.0f,  1.0f, 1.0f, 0.0f),
-
-			// Left Face
-			Vertex(-1.0f, -1.0f,  1.0f, 0.0f, 1.0f),
-			Vertex(-1.0f,  1.0f,  1.0f, 0.0f, 0.0f),
-			Vertex(-1.0f,  1.0f, -1.0f, 1.0f, 0.0f),
-			Vertex(-1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
-
-			// Right Face
-			Vertex(1.0f, -1.0f, -1.0f, 1.0f, 1.0f),
-			Vertex(1.0f,  1.0f, -1.0f, 0.0f, 1.0f),
-			Vertex(1.0f,  1.0f,  1.0f, 0.0f, 0.0f),
-			Vertex(1.0f, -1.0f,  1.0f, 1.0f, 0.0f),
-		};
-
-		//index list, verticies that make up faces
-		DWORD indices[] = {
-			// Front Face
-			0,  1,  2,
-			0,  2,  3,
-
-			// Back Face
-			4,  5,  6,
-			4,  6,  7,
-
-			// Top Face
-			8,  9, 10,
-			8, 10, 11,
-
-			// Bottom Face
-			12, 13, 14,
-			12, 14, 15,
-
-			// Left Face
-			16, 17, 18,
-			16, 18, 19,
-
-			// Right Face
-			20, 21, 22,
-			20, 22, 23
-		};*/
-
 		loadModel();
 
 		Vertex* V = &vertices[0];
@@ -271,8 +176,8 @@ public:
 
 		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 		//indexBufferDesc.ByteWidth = sizeof(DWORD) * 12 * 3;
-		//indexBufferDesc.ByteWidth = sizeof(DWORD) * indices.size() * 3;
-		indexBufferDesc.ByteWidth = sizeof(DWORD) * sizeof(I) * 3;
+		indexBufferDesc.ByteWidth = sizeof(DWORD) * indices.size() * 3;
+		//indexBufferDesc.ByteWidth = sizeof(DWORD) * sizeof(I) * 3;
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		indexBufferDesc.CPUAccessFlags = 0;
 		indexBufferDesc.MiscFlags = 0;
@@ -291,8 +196,8 @@ public:
 
 		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 		//vertexBufferDesc.ByteWidth = sizeof(Vertex) * 24;
-		//vertexBufferDesc.ByteWidth = sizeof(Vertex) * vertices.size();
-		vertexBufferDesc.ByteWidth = sizeof(Vertex) * sizeof(V);
+		vertexBufferDesc.ByteWidth = sizeof(Vertex) * vertices.size();
+		//vertexBufferDesc.ByteWidth = sizeof(Vertex) * sizeof(V);
 		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		vertexBufferDesc.CPUAccessFlags = 0;
 		vertexBufferDesc.MiscFlags = 0;
@@ -370,6 +275,47 @@ public:
 		DevCon->DrawIndexed(36, 0, 0);
 	}
 
+	void loadModel() {
+
+		//texture load
+		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
+			NULL, NULL, &CubesTexture, NULL);
+
+		tinyobj::attrib_t attrib;
+		std::vector<tinyobj::shape_t> shapes;
+		std::vector<tinyobj::material_t> materials;
+		std::string err;
+
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, MODEL_PATH.c_str())) {
+			throw std::runtime_error(err);
+		}
+
+
+		for (const auto& shape : shapes) {
+			for (const auto& index : shape.mesh.indices) {
+				Vertex vertex = {};
+
+				vertex.pos = {
+					attrib.vertices[3 * index.vertex_index + 0],
+					attrib.vertices[3 * index.vertex_index + 1],
+					attrib.vertices[3 * index.vertex_index + 2]
+				};
+
+				vertex.texCoord = {
+					attrib.texcoords[2 * index.texcoord_index + 0],
+					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+				};
+
+				//vertex.color = { 1.0f, 1.0f, 1.0f };
+
+				vertices.push_back(vertex);
+
+				indices.push_back(indices.size());
+
+			}
+		}
+	}
+
 	void setRot(float X, float Y, float Z, int rotmodsign)
 	{
 		rotX = X;
@@ -385,18 +331,23 @@ public:
 		transZ = Z;
 	}
 
-	void setTexture(LPCWSTR texT)
+	/*void setObject(LPCWSTR texT, std::string modT)
 	{
 		LPCWSTR texture = texT;
 
 		//load texture
 		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
 			NULL, NULL, &CubesTexture, NULL);
-	}
+
+		MODEL_PATH = modT;
+		loadModel();
+	}*/
 };
 
 //array of Objects
-_Object Objs[9] = {};
+_Object Objs[9] = { {SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH},{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },
+				{ SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH } ,
+				{ SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH } ,{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH } ,{ SPHERE_TEXTURE_PATH,SPHERE_MODEL_PATH } };
 
 
 //Main windows function
@@ -764,19 +715,6 @@ int messageloop(){
 	Objs[6].setTranslate(0, 0, 0.1);
 	Objs[7].setTranslate(0, 0.1, -0.1);
 	Objs[8].setTranslate(0, -0.1, 0);
-
-	//texture
-	Objs[0].setTexture(TEXTURE_PATH);
-	Objs[1].setTexture(TEXTURE_PATH);
-	Objs[2].setTexture(TEXTURE_PATH);
-
-	Objs[3].setTexture(TEXTURE_PATH);
-	Objs[4].setTexture(TEXTURE_PATH);
-	Objs[5].setTexture(TEXTURE_PATH);
-
-	Objs[6].setTexture(TEXTURE_PATH);
-	Objs[7].setTexture(TEXTURE_PATH);
-	Objs[8].setTexture(TEXTURE_PATH);
 	
 
 	//initial setting of tickcount
