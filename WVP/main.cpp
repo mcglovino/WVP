@@ -135,7 +135,7 @@ public:
 	XMMATRIX WVP;
 	XMMATRIX obj;
 	float rot = 0.01f;
-	float rotmod = 0.05f;
+	float rotspeed = 0.05f;
 	XMMATRIX Rotation;
 	XMMATRIX Scale;
 	XMMATRIX Translation;
@@ -248,11 +248,7 @@ public:
 
 	void Update()
 	{
-		rot -= rotmod;
-		if (rot > 6.26f)
-		{
-			rot = 0.0f;
-		}
+		rot -= rotspeed;
 
 		XMVECTOR rotaxis = XMVectorSet(rotX, rotY, rotZ, 0.0f);
 
@@ -334,12 +330,12 @@ public:
 	}
 
 
-	void setRot(float X, float Y, float Z, int rotmodsign)
+	void setRot(float X, float Y, float Z, float rotspeedT)
 	{
 		rotX = X;
 		rotY = Y;
 		rotZ = Z;
-		rotmod = rotmod * rotmodsign;
+		rotspeed = rotspeedT;
 	}
 
 	void setTranslate(float X, float Y, float Z)
@@ -348,18 +344,6 @@ public:
 		transY = Y;
 		transZ = Z;
 	}
-
-	/*void setObject(LPCWSTR texT, std::string modT)
-	{
-		LPCWSTR texture = texT;
-
-		//load texture
-		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
-			NULL, NULL, &CubesTexture, NULL);
-
-		MODEL_PATH = modT;
-		loadModel();
-	}*/
 };
 
 //array of Objects
@@ -643,7 +627,7 @@ bool InitScene()
 	hr = Dev->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
 
 	//Camera information
-	camPosition = XMVectorSet( 0.0f, 3.0f, -13.0f, 0.0f );
+	camPosition = XMVectorSet( 0.0f, 13.0f, -25.0f, 0.0f );
 	camTarget = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f );
 	camUp = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
 
@@ -707,9 +691,9 @@ void DrawScene()
 int messageloop(){
 
 	//rotate
-	Objs[0].setRot(0, 1, 0, 1);
-	Objs[1].setRot(0, 1, 0, 1);
-	Objs[2].setRot(0, 1, 0, 1);
+	Objs[0].setRot(0, 1, 0, 0);
+	Objs[1].setRot(0, 1, 0, 0.02f);
+	Objs[2].setRot(0, 1, 0, 0.01f);
 
 	/*Objs[3].setRot(1, 1, 0, 1);
 	Objs[4].setRot(0, 1, 0, 1);
