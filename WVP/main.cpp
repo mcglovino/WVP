@@ -13,10 +13,15 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-const LPCWSTR SPHERE_TEXTURE_PATH = L"textures/sphere16.mtl";
+const LPCWSTR GREY_TEXTURE_PATH = L"textures/grey.jpg";
+const LPCWSTR SMILE_TEXTURE_PATH = L"textures/box.jpg";
+const LPCWSTR GRASS_TEXTURE_PATH = L"textures/grass.jpg";
+
 const std::string SPHERE_MODEL_PATH = "models/sphere16.obj";
-const LPCWSTR CUBE_TEXTURE_PATH = L"textures/box.jpg";
 const std::string CUBE_MODEL_PATH = "models/cube.obj";
+const std::string TEAPOT_MODEL_PATH = "models/teapot.obj";
+const std::string PLAYER_MODEL_PATH = "models/player.obj";
+const std::string FLOOR_MODEL_PATH = "models/floorbig.obj";
 
 
 //Global Declarations - Interfaces//
@@ -259,7 +264,7 @@ public:
 		Translation = XMMatrixTranslation(transX, transY, transZ);
 
 		//Set obj's world space using the transformations
-		obj = Translation * Rotation;
+		obj = Rotation * Translation;
 	}
 
 	void Draw()
@@ -358,9 +363,7 @@ public:
 };
 
 //array of Objects
-_Object Objs[9] = { {CUBE_TEXTURE_PATH,SPHERE_MODEL_PATH},{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },
-				{ CUBE_TEXTURE_PATH,SPHERE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH },{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH } ,
-				{ CUBE_TEXTURE_PATH,SPHERE_MODEL_PATH } ,{ CUBE_TEXTURE_PATH,CUBE_MODEL_PATH } ,{ CUBE_TEXTURE_PATH,SPHERE_MODEL_PATH } };
+_Object Objs[3] = { {GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH},{ SMILE_TEXTURE_PATH,PLAYER_MODEL_PATH },{ GREY_TEXTURE_PATH,TEAPOT_MODEL_PATH } };
 
 
 //Main windows function
@@ -708,26 +711,26 @@ int messageloop(){
 	Objs[1].setRot(0, 1, 0, 1);
 	Objs[2].setRot(0, 1, 0, 1);
 
-	Objs[3].setRot(1, 1, 0, 1);
+	/*Objs[3].setRot(1, 1, 0, 1);
 	Objs[4].setRot(0, 1, 0, 1);
 	Objs[5].setRot(1, 0, 0, 1);
 
 	Objs[6].setRot(0.5, 1, 0.5, 1);
 	Objs[7].setRot(0, 1, 0, 1);
-	Objs[8].setRot(0.5, 1, 0, -1);
+	Objs[8].setRot(0.5, 1, 0, -1);*/
 
 	//translate
-	Objs[0].setTranslate(2, 2, 5);
-	Objs[1].setTranslate(-2, -2, 9);
-	Objs[2].setTranslate(0, 0, 7);
+	Objs[0].setTranslate(0, 0, 0);
+	Objs[1].setTranslate(4, 0, 0);
+	Objs[2].setTranslate(-4, 0, 0);
 
-	Objs[3].setTranslate(0, 0, -5);
+	/*Objs[3].setTranslate(0, 0, -5);
 	Objs[4].setTranslate(0, 0, -5);
 	Objs[5].setTranslate(0, 0, -5);
 
 	Objs[6].setTranslate(0, 0, 0.1);
 	Objs[7].setTranslate(0, 0.1, -0.1);
-	Objs[8].setTranslate(0, -0.1, 0);
+	Objs[8].setTranslate(0, -0.1, 0);*/
 	
 
 	//initial setting of tickcount
