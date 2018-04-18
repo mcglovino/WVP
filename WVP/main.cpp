@@ -10,9 +10,13 @@
 #include <xnamath.h>
 #include <String>
 
+//for tinyobj loader
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
+#include "_Input.h"
+
+//texture and model paths
 const LPCWSTR GREY_TEXTURE_PATH = L"textures/grey.jpg";
 const LPCWSTR SMILE_TEXTURE_PATH = L"textures/box.jpg";
 const LPCWSTR GRASS_TEXTURE_PATH = L"textures/grass.jpg";
@@ -39,6 +43,9 @@ ID3D10Blob* VS_Buffer;
 ID3D10Blob* PS_Buffer;
 //ID3D11InputLayout* vertLayout;
 ID3D11Buffer* cbPerObjectBuffer;
+
+//Input
+_Input* Input;
 
 //for frame rate stabilisation
 static int TickCount;
@@ -73,16 +80,15 @@ XMVECTOR camUp;
 XMMATRIX Rotation;
 XMMATRIX Scale;
 XMMATRIX Translation;
-//float rot = 0.01f;
 
 //Function Prototypes
+
 //initialize direct3D
 bool InitializeDirect3d11App(HINSTANCE hInstance);
-//releases objects to prevent memory leaks
 void CleanUp();
-
 bool InitScene();
 void UpdateScene();
+void BackgroundColour();
 void DrawScene();
 
 //initialize the window
@@ -337,18 +343,25 @@ public:
 		transY = Y;
 		transZ = Z;
 	}
+
+	float getTransX() {
+		return transX;
+	}
+	float getTransY() {
+		return transY;
+	}
+	float getTransZ() {
+		return transZ;
+	}
 };
 
 //array of Objects
-_Object Objs[3] = { {GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH},{ SMILE_TEXTURE_PATH,PLAYER_MODEL_PATH },{ GREY_TEXTURE_PATH,TEAPOT_MODEL_PATH } };
-
+_Object Objs[3] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
+				{ SMILE_TEXTURE_PATH,PLAYER_MODEL_PATH }, //player
+				{ GREY_TEXTURE_PATH,TEAPOT_MODEL_PATH } }; //teapot
 
 //Main windows function
-int WINAPI WinMain(HINSTANCE hInstance,
-	HINSTANCE hPrevInstance, 
-
-	LPSTR lpCmdLine,
-	int nShowCmd)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 
 	if(!InitializeWindow(hInstance, nShowCmd, Width, Height, true))
@@ -372,18 +385,17 @@ int WINAPI WinMain(HINSTANCE hInstance,
 		return 0;
 	}
 
-	messageloop();
+	Input = new _Input();
+	Input->Initialize(hInstance, hwnd, Width, Height);
 
-	CleanUp();    
+	messageloop();
+	CleanUp();
 
 	return 0;
 }
 
 //create and register windowbclass
-bool InitializeWindow(HINSTANCE hInstance,
-	int ShowWnd,
-	int width, int height,
-	bool windowed)
+bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, bool windowed)
 {
 	typedef struct _WNDCLASS {
 		UINT cbSize;
@@ -547,6 +559,7 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	return true;
 }
 
+
 void CleanUp()
 {
 	//Release the COM Objects created
@@ -640,6 +653,25 @@ void UpdateScene()
 {
 
 	TickCount = TickCountT;
+	Input->Update();
+
+
+	if (Input != NULL && Input->IsKeyDown(DIK_W))
+	{
+		Objs[1].setTranslate(Objs[1].getTransX(), Objs[1].getTransY(), Objs[1].getTransZ() + 0.2f);
+	}
+	if (Input != NULL && Input->IsKeyDown(DIK_S))
+	{
+		Objs[1].setTranslate(Objs[1].getTransX(), Objs[1].getTransY(), Objs[1].getTransZ() - 0.2f);
+	}
+	if (Input != NULL && Input->IsKeyDown(DIK_D))
+	{
+		Objs[1].setTranslate(Objs[1].getTransX() + 0.2f, Objs[1].getTransY(), Objs[1].getTransZ());
+	}
+	if (Input != NULL && Input->IsKeyDown(DIK_A))
+	{
+		Objs[1].setTranslate(Objs[1].getTransX() - 0.2f, Objs[1].getTransY(), Objs[1].getTransZ());
+	}
 
 	//Run update script on all Objects
 	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
@@ -647,7 +679,11 @@ void UpdateScene()
 		Objs[i].Update();
 	}
 
-	//Update the colours of our scene
+	BackgroundColour();
+}
+
+void BackgroundColour() {
+	//Update the colours of the background
 	red += colourmodr * 0.0005f;
 	green += colourmodg * 0.0002f;
 	blue += colourmodb * 0.0002f;
@@ -688,27 +724,11 @@ int messageloop(){
 	Objs[1].setRot(0, 1, 0, 0.02f);
 	Objs[2].setRot(0, 1, 0, 0.01f);
 
-	/*Objs[3].setRot(1, 1, 0, 1);
-	Objs[4].setRot(0, 1, 0, 1);
-	Objs[5].setRot(1, 0, 0, 1);
-
-	Objs[6].setRot(0.5, 1, 0.5, 1);
-	Objs[7].setRot(0, 1, 0, 1);
-	Objs[8].setRot(0.5, 1, 0, -1);*/
 
 	//translate
 	Objs[0].setTranslate(0, 0, 0);
 	Objs[1].setTranslate(4, 0, 0);
 	Objs[2].setTranslate(-4, 0, 0);
-
-	/*Objs[3].setTranslate(0, 0, -5);
-	Objs[4].setTranslate(0, 0, -5);
-	Objs[5].setTranslate(0, 0, -5);
-
-	Objs[6].setTranslate(0, 0, 0.1);
-	Objs[7].setTranslate(0, 0.1, -0.1);
-	Objs[8].setTranslate(0, -0.1, 0);*/
-	
 
 	//initial setting of tickcount
 	TickCount = GetTickCount();
@@ -757,6 +777,12 @@ LRESULT CALLBACK WndProc(HWND hwnd,
 	WPARAM wParam,
 	LPARAM lParam)
 {
+	if (Input != NULL && Input->IsKeyDown(DIK_ESCAPE))
+	{
+		DestroyWindow(hwnd);
+		return 0;
+	}
+
 	switch( msg )
 	{
 	case WM_KEYDOWN:
