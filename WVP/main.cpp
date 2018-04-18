@@ -180,7 +180,7 @@ public:
 		ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
 
 		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		indexBufferDesc.ByteWidth = sizeof(DWORD) * indices.size() * 3;
+		indexBufferDesc.ByteWidth = sizeof(DWORD) * indices.size();
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		indexBufferDesc.CPUAccessFlags = 0;
 		indexBufferDesc.MiscFlags = 0;
@@ -189,6 +189,7 @@ public:
 
 		iinitData.pSysMem = I;
 		//iinitData.pSysMem = indices;
+
 		Dev->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
 
 		DevCon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
@@ -236,14 +237,6 @@ public:
 
 		//create sample state
 		hr = Dev->CreateSamplerState(&sampDesc, &TexSamplerState);
-	}
-
-	void Init2()
-	{
-		//Set the vertex buffer
-		UINT stride = sizeof(Vertex);
-		UINT offset = 0;
-		DevCon->IASetVertexBuffers(0, 1, &squareVertBuffer, &stride, &offset);
 	}
 
 	void Update()
