@@ -26,18 +26,18 @@ private:
 	bool ReadMouse();
 	void ProcessInput();
 
-	IDirectInput8* m_directInput;
-	IDirectInputDevice8* m_keyboard;
-	IDirectInputDevice8* m_mouse;
-	DIMOUSESTATE m_mouseState;
+	IDirectInput8* directInput;
+	IDirectInputDevice8* keyboard;
+	IDirectInputDevice8* mouse;
+	DIMOUSESTATE mouseState;
 
-	bool m_keys[NumKeys];
-	bool m_prevKeys[NumKeys];
+	bool keys[NumKeys];
+	bool prevKeys[NumKeys];
 
-	int m_screenWidth;
-	int m_screenHeight;
-	int m_mouseX;
-	int m_mouseY;
+	int screenWidth;
+	int screenHeight;
+	int mouseX;
+	int mouseY;
 };
 
 #endif
