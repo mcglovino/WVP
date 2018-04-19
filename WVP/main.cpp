@@ -9,6 +9,7 @@
 #include <d3dx10.h>
 #include <xnamath.h>
 #include <String>
+#include <cstdlib>
 
 //for tinyobj loader
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -18,8 +19,9 @@
 #include "_FrameRate.h"
 
 //texture and model paths
-const LPCWSTR GREY_TEXTURE_PATH = L"textures/grey.jpg";
-const LPCWSTR SMILE_TEXTURE_PATH = L"textures/box.jpg";
+const LPCWSTR TEA_TEXTURE_PATH = L"textures/TEA.jpg";
+const LPCWSTR EVIL_TEXTURE_PATH = L"textures/EVIL.jpg";
+const LPCWSTR SPOTS_TEXTURE_PATH = L"textures/Spots.jpg";
 const LPCWSTR GRASS_TEXTURE_PATH = L"textures/grass.jpg";
 
 const LPCWSTR c0_TEXTURE_PATH = L"textures/0.jpg";
@@ -34,7 +36,7 @@ const LPCWSTR c8_TEXTURE_PATH = L"textures/8.jpg";
 const LPCWSTR c9_TEXTURE_PATH = L"textures/9.jpg";
 
 const std::string SPHERE_MODEL_PATH = "models/sphere16.obj";
-const std::string CUBE_MODEL_PATH = "models/cube.obj";
+const std::string CUBE_MODEL_PATH = "models/Cube.obj";
 const std::string TEAPOT_MODEL_PATH = "models/teapot.obj";
 const std::string PLAYER_MODEL_PATH = "models/player.obj";
 const std::string FLOOR_MODEL_PATH = "models/floorbig.obj";
@@ -64,6 +66,11 @@ int prev = 1;
 //for frame rate stabilisation
 static int TickCount;
 static int TickCountT;
+
+//for random respawn
+int timer = GetTickCount();
+int timerT = GetTickCount();
+int accumulator = 0;
 
 _FrameRate framerate;
 
@@ -200,8 +207,8 @@ public:
 		MODEL_PATH = modT;
 	}
 	_Object() {
-		texture = SMILE_TEXTURE_PATH;
-		MODEL_PATH = PLAYER_MODEL_PATH;
+		texture = SPOTS_TEXTURE_PATH;
+		MODEL_PATH = SPHERE_MODEL_PATH;
 	}
 
 	void Init()
@@ -277,7 +284,7 @@ public:
 	void PreviousLocation() {
 		tickCountT = GetTickCount();
 		diffAccumulator += tickCountT - tickCount;
-		if (tickCountT - tickCount > 40)
+		if (tickCountT - tickCount > 30)
 		{
 			tickCountT = GetTickCount();
 			tickCount = GetTickCount();
@@ -437,7 +444,7 @@ public:
 class _Snake{
 public:
 	std::vector<_Object> BodyParts{};
-	const static int totalSize = 30;
+	const static int totalSize = 100;
 	//_Object BodyParts[totalSize];
 	int score;
 	//constructor
@@ -445,12 +452,23 @@ public:
 	{
 		//_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
 		//BodyParts.push_back(newPart);
-		for (int i = 0; i < totalSize; i++) {
-			_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
+		_Object newPart(SPOTS_TEXTURE_PATH, PLAYER_MODEL_PATH);
+		BodyParts.push_back(newPart);
+		BodyParts[0].setTranslate(0, 0, 1);
+		BodyParts[0].setRot(0, 1, 0, 0);
+		for (int i = 1; i < totalSize -1; i++) {
+			_Object newPart(SPOTS_TEXTURE_PATH, SPHERE_MODEL_PATH);
 			BodyParts.push_back(newPart);
 			BodyParts[i].setTranslate(0, 0, 0);
 			BodyParts[i].setRot(0, 1, 0, 0);
 		}
+		//The last rendered model affects the amount of polygons all the others load, so this needs to be the player model
+		//it is set out of view, and in the movement script it is left out
+		//the game ends before this part is added on
+		BodyParts.push_back(newPart);
+		BodyParts[totalSize-1].setTranslate(0, 100, 0);
+		BodyParts[totalSize-1].setRot(0, 1, 0, 0);
+
 		setLength(lengthT);
 
 		score = 0;
@@ -459,21 +477,6 @@ public:
 	void addPos(float X, float Y, float Z) {
 		BodyParts[0].setTranslate(BodyParts[0].getX() + X, BodyParts[0].getY() + Y, BodyParts[0].getZ() + Z);
 	}
-
-	//default
-	/*void addLength()
-	{
-		length++;
-		AddPart();
-	}
-	//specific
-	void addLength(int toAdd)
-	{
-		length += toAdd;
-		for (int i = 0; i < toAdd; i++) {
-			AddPart();
-		}
-	}*/
 
 	//getters
 	int getLength()
@@ -494,40 +497,51 @@ public:
 		}
 	}
 
-	void move() {
+	void Update(_Object &Tea, _Object &Evil) {
+		//move
 		for (int i = 1; i < length; i++) {
 			BodyParts[i].setTranslate(BodyParts[i - 1].getXp(), BodyParts[i - 1].getYp(), BodyParts[i - 1].getZp());
 		}
-		for (int i = length; i < totalSize; i++) {
-			BodyParts[i].setTranslate(BodyParts[i - 1].getX(), BodyParts[i - 1].getY(), BodyParts[i - 1].getZ());
+		for (int i = length; i < totalSize -1; i++) {
+			BodyParts[i].setTranslate(0, 100, 0);
+		}
+
+		//evil teapot teapot
+		if (BodyParts[0].getX() > Evil.getX() - 1.5f && BodyParts[0].getX() < Evil.getX() + 1.5f && BodyParts[0].getZ() > Evil.getZ() - 1.5f && BodyParts[0].getZ() < Evil.getZ() + 1.5f) {
+			//end game
+			std::exit(1);
+		}
+		//collect teapot
+		if (BodyParts[0].getX() > Tea.getX() - 1.5f && BodyParts[0].getX() < Tea.getX() + 1.5f && BodyParts[0].getZ() > Tea.getZ() - 1.5f && BodyParts[0].getZ() < Tea.getZ() + 1.5f) {
+			score++;
+			length++;
+			Tea.setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+			//so it doesnt spawn right next to the player
+			while (BodyParts[0].getX() > Tea.getX() - 7.0f && BodyParts[0].getX() < Tea.getX() + 7.0f && BodyParts[0].getZ() > Tea.getZ() - 7.0f && BodyParts[0].getZ() < Tea.getZ() + 7.0f) {
+				Tea.setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+			}
+		}
+
+		if (BodyParts[0].getX() > 25 || BodyParts[0].getX() < -25 || BodyParts[0].getZ() > 25 || BodyParts[0].getZ() < -25 //If outside the area
+			|| length == 100) //as more than 100 ae not avaliable, and the score caps at 99
+		{
+			//end game
+			std::exit(1);
 		}
 	}
 
 private:
 	int length;
-
-	/*void AddPart() {
-		/*_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
-		newPart.setTranslate(BodyParts[BodyParts.size() - 1].getX(), BodyParts[BodyParts.size() - 1].getY(), BodyParts[BodyParts.size() - 1].getZ());
-		newPart.setRot(0, 1, 0, 0);
-		BodyParts.push_back(newPart);
-		length++;
-	}
-
-	void RemovePart() {
-		//BodyParts.pop_back();
-		length--;
-	}*/
 };
 
 //array of Objects
 _Object Objs[5] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
-				{ SMILE_TEXTURE_PATH,PLAYER_MODEL_PATH }, //player
-				{ GREY_TEXTURE_PATH,TEAPOT_MODEL_PATH },//teapot
-				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH },//framerate
-				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH }}; 
+				{ TEA_TEXTURE_PATH,TEAPOT_MODEL_PATH },//teapot
+				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH },//score
+				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH }, 
+				{ EVIL_TEXTURE_PATH, TEAPOT_MODEL_PATH }};//evil teapot
 
-_Snake snake(5);
+_Snake snake(1);
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -769,6 +783,8 @@ void InputCont() {
 		snake.addPos(-0.2f, 0, 0);
 		prev = 4;
 	}
+	if (!Input->IsKeyDown(DIK_A) && !Input->IsKeyDown(DIK_D) && !Input->IsKeyDown(DIK_S) && !Input->IsKeyDown(DIK_W))
+	{
 		switch (prev) {
 		case 1:
 			snake.addPos(0, 0, 0.2f);
@@ -783,6 +799,7 @@ void InputCont() {
 			snake.addPos(-0.2f, 0, 0);
 			break;
 		}
+	}
 }
 
 void AssignChar(_Object &Obj, char Char) {
@@ -820,11 +837,19 @@ void AssignChar(_Object &Obj, char Char) {
 	}
 }
 
-bool collide(_Object A, _Object B) {
-	if (A.getX() > B.getX() -1 && A.getX() < B.getX() +1 && A.getZ() > B.getZ() - 1 && A.getZ() < B.getZ() + 1) {
-		return true;
+void TimedRespawn (_Object &respawn) {
+	timerT = GetTickCount();
+	accumulator += timerT - timer;
+	if (timerT - timer > 4000)
+	{
+		respawn.setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+		//so it doesnt spawn right next to the player
+		while (respawn.getX() > snake.BodyParts[0].getX() - 7.0f && respawn.getX() < snake.BodyParts[0].getX() + 7.0f && respawn.getZ() > snake.BodyParts[0].getZ() - 7.0f && respawn.getZ() < snake.BodyParts[0].getZ() + 7.0f) {
+			respawn.setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+		}
+
+		timer = GetTickCount();
 	}
-	return false;
 }
 
 bool InitScene()
@@ -911,19 +936,21 @@ void UpdateScene()
 
 	InputCont();
 	
-	snake.move();
-	if (collide(snake.BodyParts[0], Objs[2])) {
-		snake.score++;
-		snake.setLength(snake.getLength()+1);
-		Objs[2].setTranslate((rand() % 25- 25), 0, (rand() % 25 - 25));
-	}
+	snake.Update(Objs[1], Objs[4]);
+	TimedRespawn(Objs[4]);
 
 	//std::string framerateSTR = std::to_string(framerate.CalculateFrameRate());
 	//const char *framerateCHAR = framerateSTR.c_str();
 	std::string scoreSTR = std::to_string(snake.score);
 	const char *scoreCHAR = scoreSTR.c_str();
-	AssignChar(Objs[3], scoreCHAR[0]);
-	AssignChar(Objs[4], scoreCHAR[1]);
+	if (snake.score > 10) {
+		AssignChar(Objs[2], scoreCHAR[0]);
+		AssignChar(Objs[3], scoreCHAR[1]);
+	}
+	else
+	{
+		AssignChar(Objs[3], scoreCHAR[0]);
+	}
 	
 	//Run update script on all Objects
 	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
@@ -983,18 +1010,19 @@ int messageloop(){
 
 	//rotate
 	Objs[0].setRot(0, 1, 0, 0);
-	Objs[1].setRot(0, 1, 0, 0.02f);
-	Objs[2].setRot(0, 1, 0, 0.01f);
-	Objs[2].setSpin(0.02f, 1);
+	Objs[1].setRot(0, 1, 0, 0);
+	Objs[1].setSpin(0.02f, 1);
+	Objs[2].setRot(0, 1, 0, 3.1415927);
 	Objs[3].setRot(0, 1, 0, 3.1415927);
-	Objs[4].setRot(0, 1, 0, 3.1415927);
+	Objs[4].setRot(0, 1, 0, 0);
+	Objs[4].setSpin(-0.02f, 1);
 
 	//translate
 	Objs[0].setTranslate(0, 0, 0);
-	Objs[1].setTranslate(4, 0, 0);
-	Objs[2].setTranslate(-4, 0, 10);
-	Objs[3].setTranslate(-16, 5, 35);
-	Objs[4].setTranslate(-7, 5, 35);
+	Objs[1].setTranslate(-5, 0, -10);
+	Objs[2].setTranslate(-16, 5, 35);
+	Objs[3].setTranslate(-7, 5, 35);
+	Objs[4].setTranslate(5, 0, -10);
 
 	//initial setting of tickcount
 	TickCount = GetTickCount();

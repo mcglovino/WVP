@@ -17,27 +17,17 @@ public:
 
 	bool IsKeyDown(unsigned int key);
 	bool IsKeyHit(unsigned int key);
-	void GetMousePosition(int& x, int& y);
 
 private:
 	const static int NumKeys = 256;
 
 	bool ReadKeyboard();
-	bool ReadMouse();
-	void ProcessInput();
 
 	IDirectInput8* directInput;
 	IDirectInputDevice8* keyboard;
-	IDirectInputDevice8* mouse;
-	DIMOUSESTATE mouseState;
 
 	bool keys[NumKeys];
 	bool prevKeys[NumKeys];
-
-	int screenWidth;
-	int screenHeight;
-	int mouseX;
-	int mouseY;
 };
 
 #endif
