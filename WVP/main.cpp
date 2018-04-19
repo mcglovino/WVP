@@ -174,6 +174,10 @@ public:
 		texture = texT;
 		MODEL_PATH = modT;
 	}
+	_Object() {
+		texture = SMILE_TEXTURE_PATH;
+		MODEL_PATH = PLAYER_MODEL_PATH;
+	}
 
 	void Init()
 	{
@@ -344,14 +348,98 @@ public:
 		transZ = Z;
 	}
 
-	float getTransX() {
+	float getX() {
 		return transX;
 	}
-	float getTransY() {
+	float getY() {
 		return transY;
 	}
-	float getTransZ() {
+	float getZ() {
 		return transZ;
+	}
+};
+
+/*class _Part : public _Object {
+public:
+	bool head;
+
+	_Part(bool headT) {
+		head = headT;
+	}
+};*/
+
+class _Snake{
+public:
+	std::vector<_Object> BodyParts{};
+	//constructor
+	_Snake(int lengthT)
+	{
+		_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
+		BodyParts.push_back(newPart);
+		BodyParts[0].setTranslate(0,0,0);
+		BodyParts[0].setRot(0, 1, 0, 0);
+		setLength(lengthT);
+	}
+
+
+	void addPos(float X, float Y, float Z) {
+		BodyParts[0].setTranslate(BodyParts[0].getX() + X, BodyParts[0].getY() + Y, BodyParts[0].getZ() + Z);
+	}
+
+	//default
+	void addLength()
+	{
+		length++;
+		AddPart();
+	}
+	//specific
+	void addLength(int toAdd)
+	{
+		length += toAdd;
+		for (int i = 0; i < toAdd; i++) {
+			AddPart();
+		}
+	}
+
+	//getters
+	int getLength()
+	{
+		return length;
+	}
+
+	//setters
+	void setLength(int lengthT)
+	{
+		length = lengthT;
+		while (BodyParts.size() < lengthT) {
+			AddPart();
+		}
+		while (BodyParts.size() > lengthT) {
+			if (lengthT > 0)
+				RemovePart();
+			else
+				length = BodyParts.size();
+		}
+	}
+
+private:
+	int length;
+	float minDistance = 0.25f;
+	float speed = 0.5f;
+	float rotationSpeed = 50;
+	float distance;
+
+	void AddPart() {
+		_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
+		newPart.setTranslate(BodyParts[BodyParts.size() - 1].getX(), BodyParts[BodyParts.size() - 1].getY(), BodyParts[BodyParts.size() - 1].getZ());
+		newPart.setRot(0, 1, 0, 0);
+		BodyParts.push_back(newPart);
+		//Objs[1].setTranslate(Objs[1].getX() - 0.2f, Objs[1].getY(), Objs[1].getZ());
+	}
+
+	void RemovePart() {
+		BodyParts.pop_back();
+		length--;
 	}
 };
 
@@ -359,6 +447,8 @@ public:
 _Object Objs[3] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
 				{ SMILE_TEXTURE_PATH,PLAYER_MODEL_PATH }, //player
 				{ GREY_TEXTURE_PATH,TEAPOT_MODEL_PATH } }; //teapot
+
+_Snake snake(4);
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -580,6 +670,26 @@ void CleanUp()
 
 }
 
+void InputCont() {
+	if (Input != NULL && Input->IsKeyDown(DIK_W))
+	{
+		snake.addPos(0, 0, 0.2f);
+	}
+	if (Input != NULL && Input->IsKeyDown(DIK_S))
+	{
+		snake.addPos(0, 0, -0.2f);
+	}
+	if (Input != NULL && Input->IsKeyDown(DIK_D))
+	{
+		snake.addPos(0.2f, 0, 0);
+	}
+	if (Input != NULL && Input->IsKeyDown(DIK_A))
+	{
+		snake.addPos(-0.2f, 0, 0);
+		//Objs[1].setTranslate(Objs[1].getX() - 0.2f, Objs[1].getY(), Objs[1].getZ());
+	}
+}
+
 bool InitScene()
 {
 	//Compile Shaders from shader file
@@ -601,6 +711,12 @@ bool InitScene()
 	{
 		Objs[i].loadModel();
 		Objs[i].Init();
+	}
+
+	for (int i = 0; i < snake.getLength(); i++)
+	{
+		snake.BodyParts[i].loadModel();
+		snake.BodyParts[i].Init();
 	}
 
 	//Set Primitive Topology
@@ -655,28 +771,17 @@ void UpdateScene()
 	TickCount = TickCountT;
 	Input->Update();
 
-
-	if (Input != NULL && Input->IsKeyDown(DIK_W))
-	{
-		Objs[1].setTranslate(Objs[1].getTransX(), Objs[1].getTransY(), Objs[1].getTransZ() + 0.2f);
-	}
-	if (Input != NULL && Input->IsKeyDown(DIK_S))
-	{
-		Objs[1].setTranslate(Objs[1].getTransX(), Objs[1].getTransY(), Objs[1].getTransZ() - 0.2f);
-	}
-	if (Input != NULL && Input->IsKeyDown(DIK_D))
-	{
-		Objs[1].setTranslate(Objs[1].getTransX() + 0.2f, Objs[1].getTransY(), Objs[1].getTransZ());
-	}
-	if (Input != NULL && Input->IsKeyDown(DIK_A))
-	{
-		Objs[1].setTranslate(Objs[1].getTransX() - 0.2f, Objs[1].getTransY(), Objs[1].getTransZ());
-	}
+	InputCont();
 
 	//Run update script on all Objects
 	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
 	{
 		Objs[i].Update();
+	}
+
+	for (int i = 0; i < snake.getLength(); i++)
+	{
+		snake.BodyParts[i].Update();
 	}
 
 	BackgroundColour();
@@ -710,6 +815,11 @@ void DrawScene()
 	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
 	{
 		Objs[i].Draw();
+	}
+
+	for (int i = 0; i < snake.getLength(); i++)
+	{
+		snake.BodyParts[i].Draw();
 	}
 
 	//Present the backbuffer to the screen
