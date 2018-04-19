@@ -437,14 +437,20 @@ public:
 class _Snake{
 public:
 	std::vector<_Object> BodyParts{};
+	const static int totalSize = 30;
+	//_Object BodyParts[totalSize];
 	int score;
 	//constructor
 	_Snake(int lengthT)
 	{
-		_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
-		BodyParts.push_back(newPart);
-		BodyParts[0].setTranslate(0,0,0);
-		BodyParts[0].setRot(0, 1, 0, 0);
+		//_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
+		//BodyParts.push_back(newPart);
+		for (int i = 0; i < totalSize; i++) {
+			_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
+			BodyParts.push_back(newPart);
+			BodyParts[i].setTranslate(0, 0, 0);
+			BodyParts[i].setRot(0, 1, 0, 0);
+		}
 		setLength(lengthT);
 
 		score = 0;
@@ -455,7 +461,7 @@ public:
 	}
 
 	//default
-	void addLength()
+	/*void addLength()
 	{
 		length++;
 		AddPart();
@@ -467,7 +473,7 @@ public:
 		for (int i = 0; i < toAdd; i++) {
 			AddPart();
 		}
-	}
+	}*/
 
 	//getters
 	int getLength()
@@ -479,42 +485,39 @@ public:
 	void setLength(int lengthT)
 	{
 		length = lengthT;
-		while (BodyParts.size() < lengthT) {
-			AddPart();
-		}
-		while (BodyParts.size() > lengthT) {
-			if (lengthT > 0)
-				RemovePart();
+		if (length > lengthT) {
+			if (lengthT > 0) {
+				length = lengthT;
+			}
 			else
-				length = BodyParts.size();
+				length = 1;
 		}
 	}
 
 	void move() {
-		for (int i = 1; i < BodyParts.size(); i++) {
+		for (int i = 1; i < length; i++) {
 			BodyParts[i].setTranslate(BodyParts[i - 1].getXp(), BodyParts[i - 1].getYp(), BodyParts[i - 1].getZp());
+		}
+		for (int i = length; i < totalSize; i++) {
+			BodyParts[i].setTranslate(BodyParts[i - 1].getX(), BodyParts[i - 1].getY(), BodyParts[i - 1].getZ());
 		}
 	}
 
 private:
 	int length;
-	float minDistance = 0.25f;
-	float speed = 0.5f;
-	float rotationSpeed = 50;
-	float distance;
 
-	void AddPart() {
-		_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
+	/*void AddPart() {
+		/*_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
 		newPart.setTranslate(BodyParts[BodyParts.size() - 1].getX(), BodyParts[BodyParts.size() - 1].getY(), BodyParts[BodyParts.size() - 1].getZ());
 		newPart.setRot(0, 1, 0, 0);
 		BodyParts.push_back(newPart);
-		//Objs[1].setTranslate(Objs[1].getX() - 0.2f, Objs[1].getY(), Objs[1].getZ());
+		length++;
 	}
 
 	void RemovePart() {
-		BodyParts.pop_back();
-		length --;
-	}
+		//BodyParts.pop_back();
+		length--;
+	}*/
 };
 
 //array of Objects
@@ -524,7 +527,7 @@ _Object Objs[5] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
 				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH },//framerate
 				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH }}; 
 
-_Snake snake(15);
+_Snake snake(5);
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -848,7 +851,7 @@ bool InitScene()
 		Objs[i].Init();
 	}
 
-	for (int i = 0; i < snake.getLength(); i++)
+	for (int i = 0; i < snake.totalSize; i++)
 	{
 		snake.BodyParts[i].loadModel();
 		snake.BodyParts[i].Init();
@@ -911,7 +914,8 @@ void UpdateScene()
 	snake.move();
 	if (collide(snake.BodyParts[0], Objs[2])) {
 		snake.score++;
-		//snake.addLength();
+		snake.setLength(snake.getLength()+1);
+		Objs[2].setTranslate((rand() % 25- 25), 0, (rand() % 25 - 25));
 	}
 
 	//std::string framerateSTR = std::to_string(framerate.CalculateFrameRate());
@@ -927,7 +931,7 @@ void UpdateScene()
 		Objs[i].Update();
 	}
 
-	for (int i = 0; i < snake.getLength(); i++)
+	for (int i = 0; i < snake.totalSize; i++)
 	{
 		snake.BodyParts[i].Update();
 	}
@@ -965,7 +969,7 @@ void DrawScene()
 		Objs[i].Draw();
 	}
 
-	for (int i = 0; i < snake.getLength(); i++)
+	for (int i = 0; i < snake.totalSize; i++)
 	{
 		snake.BodyParts[i].Draw();
 	}
