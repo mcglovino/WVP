@@ -59,6 +59,7 @@ ID3D11Buffer* cbPerObjectBuffer;
 
 //Input
 _Input* Input;
+int prev = 1;
 
 //for frame rate stabilisation
 static int TickCount;
@@ -170,6 +171,14 @@ public:
 	float transY = 0;
 	float transZ = 0;
 
+	float transXp = 0;
+	float transYp = 0;
+	float transZp = 0;
+
+	int tickCount = GetTickCount();
+	int tickCountT = GetTickCount();
+	int diffAccumulator = 0;
+
 	ID3D11ShaderResourceView* Texture;
 	ID3D11SamplerState* TexSamplerState;
 
@@ -265,8 +274,24 @@ public:
 		hr = Dev->CreateSamplerState(&sampDesc, &TexSamplerState);
 	}
 
+	void PreviousLocation() {
+		tickCountT = GetTickCount();
+		diffAccumulator += tickCountT - tickCount;
+		if (tickCountT - tickCount > 40)
+		{
+			tickCountT = GetTickCount();
+			tickCount = GetTickCount();
+			diffAccumulator = 0;
+			transXp = transX;
+			transYp = transY;
+			transZp = transZ;
+		}
+	}
+
 	void Update()
 	{
+		PreviousLocation();
+
 		if(rotate == 1)
 			rot -= rotSpeed;
 
@@ -379,6 +404,16 @@ public:
 		transZ = Z;
 	}
 
+	float getXp() {
+		return transXp;
+	}
+	float getYp() {
+		return transYp;
+	}
+	float getZp() {
+		return transZp;
+	}
+
 	float getX() {
 		return transX;
 	}
@@ -456,7 +491,9 @@ public:
 	}
 
 	void move() {
-		
+		for (int i = 1; i < BodyParts.size(); i++) {
+			BodyParts[i].setTranslate(BodyParts[i - 1].getXp(), BodyParts[i - 1].getYp(), BodyParts[i - 1].getZp());
+		}
 	}
 
 private:
@@ -487,7 +524,7 @@ _Object Objs[5] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
 				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH },//framerate
 				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH }}; 
 
-_Snake snake(4);
+_Snake snake(15);
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -712,20 +749,37 @@ void InputCont() {
 	if (Input != NULL && Input->IsKeyDown(DIK_W))
 	{
 		snake.addPos(0, 0, 0.2f);
+		prev = 1;
 	}
 	if (Input != NULL && Input->IsKeyDown(DIK_S))
 	{
 		snake.addPos(0, 0, -0.2f);
+		prev = 2; 
 	}
 	if (Input != NULL && Input->IsKeyDown(DIK_D))
 	{
 		snake.addPos(0.2f, 0, 0);
+		prev = 3;
 	}
 	if (Input != NULL && Input->IsKeyDown(DIK_A))
 	{
 		snake.addPos(-0.2f, 0, 0);
-		//Objs[1].setTranslate(Objs[1].getX() - 0.2f, Objs[1].getY(), Objs[1].getZ());
+		prev = 4;
 	}
+		switch (prev) {
+		case 1:
+			snake.addPos(0, 0, 0.2f);
+			break;
+		case 2:
+			snake.addPos(0, 0, -0.2f);
+			break;
+		case 3:
+			snake.addPos(0.2f, 0, 0);
+			break;
+		case 4:
+			snake.addPos(-0.2f, 0, 0);
+			break;
+		}
 }
 
 void AssignChar(_Object &Obj, char Char) {
@@ -854,6 +908,7 @@ void UpdateScene()
 
 	InputCont();
 	
+	snake.move();
 	if (collide(snake.BodyParts[0], Objs[2])) {
 		snake.score++;
 		//snake.addLength();
@@ -966,6 +1021,7 @@ int messageloop(){
 			DispatchMessage(&msg);
 		}
 		//run game code
+		//stablises frame rate
 		else{    
 			TickCountT = GetTickCount();
 			if (TickCountT - TickCount > 10)
