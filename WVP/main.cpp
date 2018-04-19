@@ -15,17 +15,30 @@
 #include "tiny_obj_loader.h"
 
 #include "_Input.h"
+#include "_FrameRate.h"
 
 //texture and model paths
 const LPCWSTR GREY_TEXTURE_PATH = L"textures/grey.jpg";
 const LPCWSTR SMILE_TEXTURE_PATH = L"textures/box.jpg";
 const LPCWSTR GRASS_TEXTURE_PATH = L"textures/grass.jpg";
 
+const LPCWSTR c0_TEXTURE_PATH = L"textures/0.jpg";
+const LPCWSTR c1_TEXTURE_PATH = L"textures/1.jpg";
+const LPCWSTR c2_TEXTURE_PATH = L"textures/2.jpg";
+const LPCWSTR c3_TEXTURE_PATH = L"textures/3.jpg";
+const LPCWSTR c4_TEXTURE_PATH = L"textures/4.jpg";
+const LPCWSTR c5_TEXTURE_PATH = L"textures/5.jpg";
+const LPCWSTR c6_TEXTURE_PATH = L"textures/6.jpg";
+const LPCWSTR c7_TEXTURE_PATH = L"textures/7.jpg";
+const LPCWSTR c8_TEXTURE_PATH = L"textures/8.jpg";
+const LPCWSTR c9_TEXTURE_PATH = L"textures/9.jpg";
+
 const std::string SPHERE_MODEL_PATH = "models/sphere16.obj";
 const std::string CUBE_MODEL_PATH = "models/cube.obj";
 const std::string TEAPOT_MODEL_PATH = "models/teapot.obj";
 const std::string PLAYER_MODEL_PATH = "models/player.obj";
 const std::string FLOOR_MODEL_PATH = "models/floorbig.obj";
+const std::string CHAR_MODEL_PATH = "models/floorsmall.obj";
 
 
 //Global Declarations - Interfaces//
@@ -50,6 +63,8 @@ _Input* Input;
 //for frame rate stabilisation
 static int TickCount;
 static int TickCountT;
+
+_FrameRate framerate;
 
 //for background colours
 float red = 1.0f;
@@ -140,8 +155,9 @@ public:
 
 	XMMATRIX WVP;
 	XMMATRIX obj;
-	float rot = 0.01f;
-	float rotspeed = 0.05f;
+	float rot = 0;
+	bool rotate = 0;
+	float rotSpeed = 0;
 	XMMATRIX Rotation;
 	XMMATRIX Scale;
 	XMMATRIX Translation;
@@ -251,7 +267,8 @@ public:
 
 	void Update()
 	{
-		rot -= rotspeed;
+		if(rotate == 1)
+			rot -= rotSpeed;
 
 		XMVECTOR rotaxis = XMVectorSet(rotX, rotY, rotZ, 0.0f);
 
@@ -332,13 +349,27 @@ public:
 		}
 	}
 
+	void setTexture(LPCWSTR textureT) {
 
-	void setRot(float X, float Y, float Z, float rotspeedT)
+		texture = textureT;
+		//texture load
+		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
+			NULL, NULL, &Texture, NULL);
+	}
+
+	void setSpin(float speedT, bool rotateT)
+	{
+		rotSpeed = speedT;
+		rotate = rotateT;
+
+	}
+
+	void setRot(float X, float Y, float Z, float rotT)
 	{
 		rotX = X;
 		rotY = Y;
 		rotZ = Z;
-		rotspeed = rotspeedT;
+		rot = rotT;
 	}
 
 	void setTranslate(float X, float Y, float Z)
@@ -371,6 +402,7 @@ public:
 class _Snake{
 public:
 	std::vector<_Object> BodyParts{};
+	int score;
 	//constructor
 	_Snake(int lengthT)
 	{
@@ -379,8 +411,9 @@ public:
 		BodyParts[0].setTranslate(0,0,0);
 		BodyParts[0].setRot(0, 1, 0, 0);
 		setLength(lengthT);
-	}
 
+		score = 0;
+	}
 
 	void addPos(float X, float Y, float Z) {
 		BodyParts[0].setTranslate(BodyParts[0].getX() + X, BodyParts[0].getY() + Y, BodyParts[0].getZ() + Z);
@@ -422,6 +455,10 @@ public:
 		}
 	}
 
+	void move() {
+		
+	}
+
 private:
 	int length;
 	float minDistance = 0.25f;
@@ -439,21 +476,22 @@ private:
 
 	void RemovePart() {
 		BodyParts.pop_back();
-		length--;
+		length --;
 	}
 };
 
 //array of Objects
-_Object Objs[3] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
+_Object Objs[5] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
 				{ SMILE_TEXTURE_PATH,PLAYER_MODEL_PATH }, //player
-				{ GREY_TEXTURE_PATH,TEAPOT_MODEL_PATH } }; //teapot
+				{ GREY_TEXTURE_PATH,TEAPOT_MODEL_PATH },//teapot
+				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH },//framerate
+				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH }}; 
 
 _Snake snake(4);
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-
 	if(!InitializeWindow(hInstance, nShowCmd, Width, Height, true))
 	{
 		MessageBox(0, L"Window Initialization - Failed",
@@ -541,7 +579,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 		//name of class window uses, registered above
 		WndClassName,
 		//text that will appear in the title bar
-		L"Work please",
+		L"Snek",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		width, height,
@@ -690,8 +728,51 @@ void InputCont() {
 	}
 }
 
+void AssignChar(_Object &Obj, char Char) {
+	switch (Char) {
+	case '0':
+		Obj.setTexture(c0_TEXTURE_PATH);
+		break;
+	case '1':
+		Obj.setTexture(c1_TEXTURE_PATH);
+		break;
+	case '2':
+		Obj.setTexture(c2_TEXTURE_PATH);
+		break;
+	case '3':
+		Obj.setTexture(c3_TEXTURE_PATH);
+		break;
+	case '4':
+		Obj.setTexture(c4_TEXTURE_PATH);
+		break;
+	case '5':
+		Obj.setTexture(c5_TEXTURE_PATH);
+		break;
+	case '6':
+		Obj.setTexture(c6_TEXTURE_PATH);
+		break;
+	case '7':
+		Obj.setTexture(c7_TEXTURE_PATH);
+		break;
+	case '8':
+		Obj.setTexture(c8_TEXTURE_PATH);
+		break;
+	case '9':
+		Obj.setTexture(c9_TEXTURE_PATH);
+		break;
+	}
+}
+
+bool collide(_Object A, _Object B) {
+	if (A.getX() > B.getX() -1 && A.getX() < B.getX() +1 && A.getZ() > B.getZ() - 1 && A.getZ() < B.getZ() + 1) {
+		return true;
+	}
+	return false;
+}
+
 bool InitScene()
 {
+
 	//Compile Shaders from shader file
 	hr = D3DX11CompileFromFile(L"Effects.fx", 0, 0, "VS", "vs_4_0", 0, 0, 0, &VS_Buffer, 0, 0);
 	hr = D3DX11CompileFromFile(L"Effects.fx", 0, 0, "PS", "ps_4_0", 0, 0, 0, &PS_Buffer, 0, 0);
@@ -749,7 +830,7 @@ bool InitScene()
 	hr = Dev->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
 
 	//Camera information
-	camPosition = XMVectorSet( 0.0f, 13.0f, -25.0f, 0.0f );
+	camPosition = XMVectorSet( 0.0f, 40.0f, -35.0f, 0.0f );
 	camTarget = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f );
 	camUp = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
 
@@ -772,7 +853,19 @@ void UpdateScene()
 	Input->Update();
 
 	InputCont();
+	
+	if (collide(snake.BodyParts[0], Objs[2])) {
+		snake.score++;
+		//snake.addLength();
+	}
 
+	//std::string framerateSTR = std::to_string(framerate.CalculateFrameRate());
+	//const char *framerateCHAR = framerateSTR.c_str();
+	std::string scoreSTR = std::to_string(snake.score);
+	const char *scoreCHAR = scoreSTR.c_str();
+	AssignChar(Objs[3], scoreCHAR[0]);
+	AssignChar(Objs[4], scoreCHAR[1]);
+	
 	//Run update script on all Objects
 	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
 	{
@@ -833,12 +926,16 @@ int messageloop(){
 	Objs[0].setRot(0, 1, 0, 0);
 	Objs[1].setRot(0, 1, 0, 0.02f);
 	Objs[2].setRot(0, 1, 0, 0.01f);
-
+	Objs[2].setSpin(0.02f, 1);
+	Objs[3].setRot(0, 1, 0, 3.1415927);
+	Objs[4].setRot(0, 1, 0, 3.1415927);
 
 	//translate
 	Objs[0].setTranslate(0, 0, 0);
 	Objs[1].setTranslate(4, 0, 0);
-	Objs[2].setTranslate(-4, 0, 0);
+	Objs[2].setTranslate(-4, 0, 10);
+	Objs[3].setTranslate(-16, 5, 35);
+	Objs[4].setTranslate(-7, 5, 35);
 
 	//initial setting of tickcount
 	TickCount = GetTickCount();
@@ -887,12 +984,6 @@ LRESULT CALLBACK WndProc(HWND hwnd,
 	WPARAM wParam,
 	LPARAM lParam)
 {
-	if (Input != NULL && Input->IsKeyDown(DIK_ESCAPE))
-	{
-		DestroyWindow(hwnd);
-		return 0;
-	}
-
 	switch( msg )
 	{
 	case WM_KEYDOWN:
