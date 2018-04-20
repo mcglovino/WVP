@@ -67,11 +67,6 @@ int prev = 1;
 static int TickCount;
 static int TickCountT;
 
-//for random respawn
-int timer = GetTickCount();
-int timerT = GetTickCount();
-int accumulator = 0;
-
 _FrameRate framerate;
 
 //for background colours
@@ -105,7 +100,6 @@ XMMATRIX Scale;
 XMMATRIX Translation;
 
 //Function Prototypes
-
 //initialize direct3D
 bool InitializeDirect3d11App(HINSTANCE hInstance);
 void CleanUp();
@@ -113,6 +107,7 @@ bool InitScene();
 void UpdateScene();
 void BackgroundColour();
 void DrawScene();
+void Setup();
 
 //initialize the window
 bool InitializeWindow(HINSTANCE hInstance,
@@ -160,55 +155,18 @@ UINT numElements = ARRAYSIZE(layout);
 class _Object
 {
 public:
-
-	XMMATRIX WVP;
-	XMMATRIX obj;
-	float rot = 0;
-	bool rotate = 0;
-	float rotSpeed = 0;
-	XMMATRIX Rotation;
-	XMMATRIX Scale;
-	XMMATRIX Translation;
-
-	float rotX  = 0;
-	float rotY = 0;
-	float rotZ = 0;
-
-	float transX = 0;
-	float transY = 0;
-	float transZ = 0;
-
-	float transXp = 0;
-	float transYp = 0;
-	float transZp = 0;
-
-	int tickCount = GetTickCount();
-	int tickCountT = GetTickCount();
-	int diffAccumulator = 0;
-
-	ID3D11ShaderResourceView* Texture;
-	ID3D11SamplerState* TexSamplerState;
-
-	LPCWSTR texture;
-	std::string MODEL_PATH;
-
-	std::vector<Vertex> vertices;
-	std::vector<DWORD> indices;
-	ID3D11Buffer* vertexBuffer;
-	ID3D11Device* vertexBufferMemory;
-
-	ID3D11Buffer* squareIndexBuffer;
-	ID3D11Buffer* squareVertBuffer;
-	ID3D11InputLayout* vertLayout;
-
 	//constructor
 	_Object(LPCWSTR texT, std::string modT) {
 		texture = texT;
 		MODEL_PATH = modT;
+		setRot(0,10,0,0);
+		setTranslate(0, 0, 0);
 	}
 	_Object() {
 		texture = SPOTS_TEXTURE_PATH;
 		MODEL_PATH = SPHERE_MODEL_PATH;
+		setTranslate(0, 0, 0);
+		setRot(0, 10, 0, 0);
 	}
 
 	void Init()
@@ -381,6 +339,32 @@ public:
 		}
 	}
 
+	void respawn(_Object &other, _Object &sHead, bool timed) {
+		if (timed == 0) {
+			setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+			//so it doesnt spawn right next to the player or other teapot
+			while (transX > sHead.getX() - 7.0f && transX < sHead.getX() + 7.0f && transZ > sHead.getZ() - 7.0f && transZ < sHead.getZ() + 7.0f &&
+				transX > other.getX() - 2.0f && transX < other.getX() + 2.0f && transZ > other.getZ() - 2.0f && transZ < other.getZ() + 2.0f) {
+				setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+			}
+		}
+		else {
+			tickCountT2 = GetTickCount();
+			diffAccumulator2 += tickCountT2 - tickCount2;
+			if (tickCountT2 - tickCount2 > 4000)
+			{
+				setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+				//so it doesnt spawn right next to the player or other teapot
+				while (transX > sHead.getX() - 7.0f && transX < sHead.getX() + 7.0f && transZ > sHead.getZ() - 7.0f && transZ < sHead.getZ() + 7.0f &&
+					transX > other.getX() - 2.0f && transX < other.getX() + 2.0f && transZ > other.getZ() - 2.0f && transZ < other.getZ() + 2.0f) {
+					setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+				}
+
+				tickCount2 = GetTickCount();
+			}
+		}
+	}
+
 	void setTexture(LPCWSTR textureT) {
 
 		texture = textureT;
@@ -430,28 +414,60 @@ public:
 	float getZ() {
 		return transZ;
 	}
+
+	private:
+
+	XMMATRIX WVP;
+	XMMATRIX obj;
+	float rot = 0;
+	bool rotate = 0;
+	float rotSpeed = 0;
+	XMMATRIX Rotation;
+	XMMATRIX Scale;
+	XMMATRIX Translation;
+
+	float rotX  = 0;
+	float rotY = 0;
+	float rotZ = 0;
+
+	float transX = 0;
+	float transY = 0;
+	float transZ = 0;
+
+	float transXp = 0;
+	float transYp = 0;
+	float transZp = 0;
+
+	int tickCount = GetTickCount();
+	int tickCountT = GetTickCount();
+	int diffAccumulator = 0;
+	int tickCount2 = GetTickCount();
+	int tickCountT2 = GetTickCount();
+	int diffAccumulator2 = 0;
+
+	ID3D11ShaderResourceView* Texture;
+	ID3D11SamplerState* TexSamplerState;
+
+	LPCWSTR texture;
+	std::string MODEL_PATH;
+
+	std::vector<Vertex> vertices;
+	std::vector<DWORD> indices;
+	ID3D11Buffer* vertexBuffer;
+	ID3D11Device* vertexBufferMemory;
+
+	ID3D11Buffer* squareIndexBuffer;
+	ID3D11Buffer* squareVertBuffer;
+	ID3D11InputLayout* vertLayout;
 };
 
-/*class _Part : public _Object {
-public:
-	bool head;
-
-	_Part(bool headT) {
-		head = headT;
-	}
-};*/
 
 class _Snake{
 public:
 	std::vector<_Object> BodyParts{};
-	const static int totalSize = 100;
-	//_Object BodyParts[totalSize];
-	int score;
 	//constructor
 	_Snake(int lengthT)
 	{
-		//_Object newPart(SMILE_TEXTURE_PATH, PLAYER_MODEL_PATH);
-		//BodyParts.push_back(newPart);
 		_Object newPart(SPOTS_TEXTURE_PATH, PLAYER_MODEL_PATH);
 		BodyParts.push_back(newPart);
 		BodyParts[0].setTranslate(0, 0, 1);
@@ -482,6 +498,14 @@ public:
 	int getLength()
 	{
 		return length;
+	}
+	int getScore()
+	{
+		return score;
+	}
+	int getTotalSize()
+	{
+		return totalSize;
 	}
 
 	//setters
@@ -515,11 +539,7 @@ public:
 		if (BodyParts[0].getX() > Tea.getX() - 1.5f && BodyParts[0].getX() < Tea.getX() + 1.5f && BodyParts[0].getZ() > Tea.getZ() - 1.5f && BodyParts[0].getZ() < Tea.getZ() + 1.5f) {
 			score++;
 			length++;
-			Tea.setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
-			//so it doesnt spawn right next to the player
-			while (BodyParts[0].getX() > Tea.getX() - 7.0f && BodyParts[0].getX() < Tea.getX() + 7.0f && BodyParts[0].getZ() > Tea.getZ() - 7.0f && BodyParts[0].getZ() < Tea.getZ() + 7.0f) {
-				Tea.setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
-			}
+			Tea.respawn(Evil, BodyParts[0], 0);
 		}
 
 		if (BodyParts[0].getX() > 25 || BodyParts[0].getX() < -25 || BodyParts[0].getZ() > 25 || BodyParts[0].getZ() < -25 //If outside the area
@@ -532,6 +552,8 @@ public:
 
 private:
 	int length;
+	int totalSize = 100;
+	int score;
 };
 
 //array of Objects
@@ -837,19 +859,18 @@ void AssignChar(_Object &Obj, char Char) {
 	}
 }
 
-void TimedRespawn (_Object &respawn) {
-	timerT = GetTickCount();
-	accumulator += timerT - timer;
-	if (timerT - timer > 4000)
-	{
-		respawn.setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
-		//so it doesnt spawn right next to the player
-		while (respawn.getX() > snake.BodyParts[0].getX() - 7.0f && respawn.getX() < snake.BodyParts[0].getX() + 7.0f && respawn.getZ() > snake.BodyParts[0].getZ() - 7.0f && respawn.getZ() < snake.BodyParts[0].getZ() + 7.0f) {
-			respawn.setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
-		}
+void Setup() {
+	//rotate
+	Objs[1].setSpin(0.02f, 1);
+	Objs[2].setRot(0, 1, 0, 3.1415927);
+	Objs[3].setRot(0, 1, 0, 3.1415927);
+	Objs[4].setSpin(-0.02f, 1);
 
-		timer = GetTickCount();
-	}
+	//translate
+	Objs[1].setTranslate(-5, 0, -10);
+	Objs[2].setTranslate(-16, 5, 35);
+	Objs[3].setTranslate(-7, 5, 35);
+	Objs[4].setTranslate(5, 0, -10);
 }
 
 bool InitScene()
@@ -867,6 +888,8 @@ bool InitScene()
 	DevCon->VSSetShader(VS, 0, 0);
 	DevCon->PSSetShader(PS, 0, 0);
 
+
+	Setup();
 	//Run scene script for all object
 	//size of returns sie in bytes
 	//by dividing by the size of one of them, it leaves the size of the array
@@ -876,7 +899,7 @@ bool InitScene()
 		Objs[i].Init();
 	}
 
-	for (int i = 0; i < snake.totalSize; i++)
+	for (int i = 0; i < snake.getTotalSize(); i++)
 	{
 		snake.BodyParts[i].loadModel();
 		snake.BodyParts[i].Init();
@@ -935,15 +958,14 @@ void UpdateScene()
 	Input->Update();
 
 	InputCont();
-	
 	snake.Update(Objs[1], Objs[4]);
-	TimedRespawn(Objs[4]);
+	Objs[4].respawn(Objs[1], snake.BodyParts[0], 1);
 
 	//std::string framerateSTR = std::to_string(framerate.CalculateFrameRate());
 	//const char *framerateCHAR = framerateSTR.c_str();
-	std::string scoreSTR = std::to_string(snake.score);
+	std::string scoreSTR = std::to_string(snake.getScore());
 	const char *scoreCHAR = scoreSTR.c_str();
-	if (snake.score > 10) {
+	if (snake.getScore() > 10) {
 		AssignChar(Objs[2], scoreCHAR[0]);
 		AssignChar(Objs[3], scoreCHAR[1]);
 	}
@@ -958,7 +980,7 @@ void UpdateScene()
 		Objs[i].Update();
 	}
 
-	for (int i = 0; i < snake.totalSize; i++)
+	for (int i = 0; i < snake.getTotalSize(); i++)
 	{
 		snake.BodyParts[i].Update();
 	}
@@ -996,7 +1018,7 @@ void DrawScene()
 		Objs[i].Draw();
 	}
 
-	for (int i = 0; i < snake.totalSize; i++)
+	for (int i = 0; i < snake.getTotalSize(); i++)
 	{
 		snake.BodyParts[i].Draw();
 	}
@@ -1007,22 +1029,6 @@ void DrawScene()
 
 //keeps the programming running
 int messageloop(){
-
-	//rotate
-	Objs[0].setRot(0, 1, 0, 0);
-	Objs[1].setRot(0, 1, 0, 0);
-	Objs[1].setSpin(0.02f, 1);
-	Objs[2].setRot(0, 1, 0, 3.1415927);
-	Objs[3].setRot(0, 1, 0, 3.1415927);
-	Objs[4].setRot(0, 1, 0, 0);
-	Objs[4].setSpin(-0.02f, 1);
-
-	//translate
-	Objs[0].setTranslate(0, 0, 0);
-	Objs[1].setTranslate(-5, 0, -10);
-	Objs[2].setTranslate(-16, 5, 35);
-	Objs[3].setTranslate(-7, 5, 35);
-	Objs[4].setTranslate(5, 0, -10);
 
 	//initial setting of tickcount
 	TickCount = GetTickCount();
