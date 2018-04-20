@@ -17,12 +17,13 @@
 
 #include "_Input.h"
 #include "_FrameRate.h"
+#include "_Vertex.h"
 
 //texture and model paths
 const LPCWSTR TEA_TEXTURE_PATH = L"textures/TEA.jpg";
 const LPCWSTR EVIL_TEXTURE_PATH = L"textures/EVIL.jpg";
 const LPCWSTR SPOTS_TEXTURE_PATH = L"textures/Spots.jpg";
-const LPCWSTR GRASS_TEXTURE_PATH = L"textures/grass.jpg";
+const LPCWSTR DIRT_TEXTURE_PATH = L"textures/dirt.jpg";
 
 const LPCWSTR c0_TEXTURE_PATH = L"textures/0.jpg";
 const LPCWSTR c1_TEXTURE_PATH = L"textures/1.jpg";
@@ -34,6 +35,8 @@ const LPCWSTR c6_TEXTURE_PATH = L"textures/6.jpg";
 const LPCWSTR c7_TEXTURE_PATH = L"textures/7.jpg";
 const LPCWSTR c8_TEXTURE_PATH = L"textures/8.jpg";
 const LPCWSTR c9_TEXTURE_PATH = L"textures/9.jpg";
+
+const LPCWSTR WORM_TEXTURE_PATH = L"textures/Worm.jpg";
 
 const std::string SPHERE_MODEL_PATH = "models/sphere16.obj";
 const std::string CUBE_MODEL_PATH = "models/Cube.obj";
@@ -131,19 +134,6 @@ struct cbPerObject
 
 cbPerObject cbPerObj;
 
-
-struct Vertex	//Overloaded Vertex Structure
-{
-	Vertex() {}
-	Vertex(float x, float y, float z,
-		float u, float v)
-		: pos(x, y, z), texCoord(u, v) {}
-
-	XMFLOAT3 pos;
-	XMFLOAT2 texCoord;
-
-};
-
 D3D11_INPUT_ELEMENT_DESC layout[] =
 {
 	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },  
@@ -173,7 +163,7 @@ public:
 	{
 		//loadModel();
 
-		Vertex* V = &vertices[0];
+		_Vertex* V = &vertices[0];
 		DWORD* I = &indices[0];
 
 		D3D11_BUFFER_DESC indexBufferDesc;
@@ -199,7 +189,7 @@ public:
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
 		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		vertexBufferDesc.ByteWidth = sizeof(Vertex) * vertices.size();
+		vertexBufferDesc.ByteWidth = sizeof(_Vertex) * vertices.size();
 		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		vertexBufferDesc.CPUAccessFlags = 0;
 		vertexBufferDesc.MiscFlags = 0;
@@ -211,7 +201,7 @@ public:
 		hr = Dev->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &squareVertBuffer);
 
 		//Set the vertex buffer
-		UINT stride = sizeof(Vertex);
+		UINT stride = sizeof(_Vertex);
 		UINT offset = 0;
 		DevCon->IASetVertexBuffers(0, 1, &squareVertBuffer, &stride, &offset);
 
@@ -276,7 +266,7 @@ public:
 	void Draw()
 	{
 		//Reset the vertex buffer
-		UINT stride = sizeof(Vertex);
+		UINT stride = sizeof(_Vertex);
 		UINT offset = 0;
 		DevCon->IASetVertexBuffers(0, 1, &squareVertBuffer, &stride, &offset);
 
@@ -317,7 +307,7 @@ public:
 
 		for (const auto& shape : shapes) {
 			for (const auto& index : shape.mesh.indices) {
-				Vertex vertex = {};
+				_Vertex vertex = {};
 
 				vertex.pos = {
 					attrib.vertices[3 * index.vertex_index + 0],
@@ -343,8 +333,8 @@ public:
 		if (timed == 0) {
 			setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
 			//so it doesnt spawn right next to the player or other teapot
-			while (transX > sHead.getX() - 7.0f && transX < sHead.getX() + 7.0f && transZ > sHead.getZ() - 7.0f && transZ < sHead.getZ() + 7.0f &&
-				transX > other.getX() - 2.0f && transX < other.getX() + 2.0f && transZ > other.getZ() - 2.0f && transZ < other.getZ() + 2.0f) {
+			while ((transX > sHead.getX() - 7.0f && transX < sHead.getX() + 7.0f && transZ > sHead.getZ() - 7.0f && transZ < sHead.getZ() + 7.0f) 
+				|| (transX > other.getX() - 2.0f && transX < other.getX() + 2.0f && transZ > other.getZ() - 2.0f && transZ < other.getZ() + 2.0f)){
 				setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
 			}
 		}
@@ -355,8 +345,8 @@ public:
 			{
 				setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
 				//so it doesnt spawn right next to the player or other teapot
-				while (transX > sHead.getX() - 7.0f && transX < sHead.getX() + 7.0f && transZ > sHead.getZ() - 7.0f && transZ < sHead.getZ() + 7.0f &&
-					transX > other.getX() - 2.0f && transX < other.getX() + 2.0f && transZ > other.getZ() - 2.0f && transZ < other.getZ() + 2.0f) {
+				while ((transX > sHead.getX() - 7.0f && transX < sHead.getX() + 7.0f && transZ > sHead.getZ() - 7.0f && transZ < sHead.getZ() + 7.0f)
+					|| (transX > other.getX() - 2.0f && transX < other.getX() + 2.0f && transZ > other.getZ() - 2.0f && transZ < other.getZ() + 2.0f)) {
 					setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
 				}
 
@@ -371,6 +361,41 @@ public:
 		//texture load
 		hr = D3DX11CreateShaderResourceViewFromFile(Dev, texture,
 			NULL, NULL, &Texture, NULL);
+	}
+
+	void AssignChar(char Char) {
+		switch (Char) {
+		case '0':
+			setTexture(c0_TEXTURE_PATH);
+			break;
+		case '1':
+			setTexture(c1_TEXTURE_PATH);
+			break;
+		case '2':
+			setTexture(c2_TEXTURE_PATH);
+			break;
+		case '3':
+			setTexture(c3_TEXTURE_PATH);
+			break;
+		case '4':
+			setTexture(c4_TEXTURE_PATH);
+			break;
+		case '5':
+			setTexture(c5_TEXTURE_PATH);
+			break;
+		case '6':
+			setTexture(c6_TEXTURE_PATH);
+			break;
+		case '7':
+			setTexture(c7_TEXTURE_PATH);
+			break;
+		case '8':
+			setTexture(c8_TEXTURE_PATH);
+			break;
+		case '9':
+			setTexture(c9_TEXTURE_PATH);
+			break;
+		}
 	}
 
 	void setSpin(float speedT, bool rotateT)
@@ -451,7 +476,7 @@ public:
 	LPCWSTR texture;
 	std::string MODEL_PATH;
 
-	std::vector<Vertex> vertices;
+	std::vector<_Vertex> vertices;
 	std::vector<DWORD> indices;
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Device* vertexBufferMemory;
@@ -470,20 +495,14 @@ public:
 	{
 		_Object newPart(SPOTS_TEXTURE_PATH, PLAYER_MODEL_PATH);
 		BodyParts.push_back(newPart);
-		BodyParts[0].setTranslate(0, 0, 1);
-		BodyParts[0].setRot(0, 1, 0, 0);
 		for (int i = 1; i < totalSize -1; i++) {
 			_Object newPart(SPOTS_TEXTURE_PATH, SPHERE_MODEL_PATH);
 			BodyParts.push_back(newPart);
-			BodyParts[i].setTranslate(0, 0, 0);
-			BodyParts[i].setRot(0, 1, 0, 0);
 		}
 		//The last rendered model affects the amount of polygons all the others load, so this needs to be the player model
 		//it is set out of view, and in the movement script it is left out
 		//the game ends before this part is added on
 		BodyParts.push_back(newPart);
-		BodyParts[totalSize-1].setTranslate(0, 100, 0);
-		BodyParts[totalSize-1].setRot(0, 1, 0, 0);
 
 		setLength(lengthT);
 
@@ -526,7 +545,7 @@ public:
 		for (int i = 1; i < length; i++) {
 			BodyParts[i].setTranslate(BodyParts[i - 1].getXp(), BodyParts[i - 1].getYp(), BodyParts[i - 1].getZp());
 		}
-		for (int i = length; i < totalSize -1; i++) {
+		for (int i = length; i < totalSize; i++) {
 			BodyParts[i].setTranslate(0, 100, 0);
 		}
 
@@ -544,7 +563,7 @@ public:
 		}
 
 		if (BodyParts[0].getX() > 25 || BodyParts[0].getX() < -25 || BodyParts[0].getZ() > 25 || BodyParts[0].getZ() < -25 //If outside the area
-			|| length == 100) //as more than 100 ae not avaliable, and the score caps at 99
+			|| length == 100) //as more than 100 are not avaliable, and the score caps at 99
 		{
 			//end game
 			CleanUp();
@@ -599,11 +618,13 @@ private:
 };
 
 //array of Objects
-_Object Objs[5] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
+_Object Objs[6] = { { DIRT_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
 				{ TEA_TEXTURE_PATH,TEAPOT_MODEL_PATH },//teapot
+				{ EVIL_TEXTURE_PATH, TEAPOT_MODEL_PATH },//evil teapot
 				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH },//score
-				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH }, 
-				{ EVIL_TEXTURE_PATH, TEAPOT_MODEL_PATH }};//evil teapot
+				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH },
+				{ WORM_TEXTURE_PATH, FLOOR_MODEL_PATH } };//rules
+				
 
 _Worm worm(1);
 
@@ -681,7 +702,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 	//name class here
 	wc.lpszClassName = WndClassName;
 	//controlls icon on taskbar (and top left)
-	wc.hIconSm = LoadIcon(NULL, IDI_SHIELD);
+	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 
 	//register clqass, if fails pulls up and error
 	if (!RegisterClassEx(&wc))
@@ -805,7 +826,6 @@ bool InitializeDirect3d11App(HINSTANCE hInstance)
 	return true;
 }
 
-
 void CleanUp()
 {
 	//Release the COM Objects created
@@ -826,55 +846,21 @@ void CleanUp()
 
 }
 
-
-
-void AssignChar(_Object &Obj, char Char) {
-	switch (Char) {
-	case '0':
-		Obj.setTexture(c0_TEXTURE_PATH);
-		break;
-	case '1':
-		Obj.setTexture(c1_TEXTURE_PATH);
-		break;
-	case '2':
-		Obj.setTexture(c2_TEXTURE_PATH);
-		break;
-	case '3':
-		Obj.setTexture(c3_TEXTURE_PATH);
-		break;
-	case '4':
-		Obj.setTexture(c4_TEXTURE_PATH);
-		break;
-	case '5':
-		Obj.setTexture(c5_TEXTURE_PATH);
-		break;
-	case '6':
-		Obj.setTexture(c6_TEXTURE_PATH);
-		break;
-	case '7':
-		Obj.setTexture(c7_TEXTURE_PATH);
-		break;
-	case '8':
-		Obj.setTexture(c8_TEXTURE_PATH);
-		break;
-	case '9':
-		Obj.setTexture(c9_TEXTURE_PATH);
-		break;
-	}
-}
-
 void Setup() {
 	//rotate
 	Objs[1].setSpin(0.02f, 1);
-	Objs[2].setRot(0, 1, 0, 3.1415927);
-	Objs[3].setRot(0, 1, 0, 3.1415927);
-	Objs[4].setSpin(-0.02f, 1);
+	Objs[2].setSpin(-0.02f, 1);
+	Objs[3].setRot(0, 1, 0, 3.1415927f);
+	Objs[4].setRot(0, 1, 0, 3.1415927f);
+	Objs[5].setRot(0, 0.7071068f, -0.7071068f, 3.1415927f);
+
 
 	//translate
 	Objs[1].setTranslate(-5, 0, -10);
-	Objs[2].setTranslate(-16, 5, 35);
-	Objs[3].setTranslate(-7, 5, 35);
-	Objs[4].setTranslate(5, 0, -10);
+	Objs[2].setTranslate(5, 0, -10);
+	Objs[3].setTranslate(-20, 0, 35);
+	Objs[4].setTranslate(-11, 0, 35);
+	Objs[5].setTranslate(23, -13, 80);
 }
 
 bool InitScene()
@@ -962,20 +948,20 @@ void UpdateScene()
 	Input->Update();
 
 	worm.InputCont();
-	worm.Update(Objs[1], Objs[4]);
-	Objs[4].respawn(Objs[1], worm.BodyParts[0], 1);
+	worm.Update(Objs[1], Objs[2]);
+	Objs[2].respawn(Objs[1], worm.BodyParts[0], 1);
 
 	//std::string framerateSTR = std::to_string(framerate.CalculateFrameRate());
 	//const char *framerateCHAR = framerateSTR.c_str();
 	std::string scoreSTR = std::to_string(worm.getScore());
 	const char *scoreCHAR = scoreSTR.c_str();
 	if (worm.getScore() > 10) {
-		AssignChar(Objs[2], scoreCHAR[0]);
-		AssignChar(Objs[3], scoreCHAR[1]);
+		Objs[3].AssignChar(scoreCHAR[0]);
+		Objs[4].AssignChar(scoreCHAR[1]);
 	}
 	else
 	{
-		AssignChar(Objs[3], scoreCHAR[0]);
+		Objs[4].AssignChar(scoreCHAR[0]);
 	}
 	
 	//Run update script on all Objects

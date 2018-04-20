@@ -14,6 +14,4 @@ public:
 	_Vertex();
 	_Vertex(float x, float y, float z,
 		float u, float v);
-
-	~_Vertex();
 };
