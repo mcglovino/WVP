@@ -462,11 +462,11 @@ public:
 };
 
 
-class _Snake{
+class _Worm{
 public:
 	std::vector<_Object> BodyParts{};
 	//constructor
-	_Snake(int lengthT)
+	_Worm(int lengthT)
 	{
 		_Object newPart(SPOTS_TEXTURE_PATH, PLAYER_MODEL_PATH);
 		BodyParts.push_back(newPart);
@@ -533,6 +533,7 @@ public:
 		//evil teapot teapot
 		if (BodyParts[0].getX() > Evil.getX() - 1.5f && BodyParts[0].getX() < Evil.getX() + 1.5f && BodyParts[0].getZ() > Evil.getZ() - 1.5f && BodyParts[0].getZ() < Evil.getZ() + 1.5f) {
 			//end game
+			CleanUp();
 			std::exit(1);
 		}
 		//collect teapot
@@ -546,7 +547,48 @@ public:
 			|| length == 100) //as more than 100 ae not avaliable, and the score caps at 99
 		{
 			//end game
+			CleanUp();
 			std::exit(1);
+		}
+	}
+
+	void InputCont() {
+		if (Input != NULL && Input->IsKeyDown(DIK_W))
+		{
+			addPos(0, 0, 0.25f);
+			prev = 1;
+		}
+		if (Input != NULL && Input->IsKeyDown(DIK_S))
+		{
+			addPos(0, 0, -0.25f);
+			prev = 2;
+		}
+		if (Input != NULL && Input->IsKeyDown(DIK_D))
+		{
+			addPos(0.25f, 0, 0);
+			prev = 3;
+		}
+		if (Input != NULL && Input->IsKeyDown(DIK_A))
+		{
+			addPos(-0.25f, 0, 0);
+			prev = 4;
+		}
+		if (!Input->IsKeyDown(DIK_A) && !Input->IsKeyDown(DIK_D) && !Input->IsKeyDown(DIK_S) && !Input->IsKeyDown(DIK_W))
+		{
+			switch (prev) {
+			case 1:
+				addPos(0, 0, 0.25f);
+				break;
+			case 2:
+				addPos(0, 0, -0.25f);
+				break;
+			case 3:
+				addPos(0.25f, 0, 0);
+				break;
+			case 4:
+				addPos(-0.25f, 0, 0);
+				break;
+			}
 		}
 	}
 
@@ -563,7 +605,7 @@ _Object Objs[5] = { { GRASS_TEXTURE_PATH,FLOOR_MODEL_PATH }, //floor
 				{ c0_TEXTURE_PATH, CHAR_MODEL_PATH }, 
 				{ EVIL_TEXTURE_PATH, TEAPOT_MODEL_PATH }};//evil teapot
 
-_Snake snake(1);
+_Worm worm(1);
 
 //Main windows function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -655,7 +697,7 @@ bool InitializeWindow(HINSTANCE hInstance, int ShowWnd, int width, int height, b
 		//name of class window uses, registered above
 		WndClassName,
 		//text that will appear in the title bar
-		L"Snek",
+		L"Worm",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		width, height,
@@ -784,45 +826,7 @@ void CleanUp()
 
 }
 
-void InputCont() {
-	if (Input != NULL && Input->IsKeyDown(DIK_W))
-	{
-		snake.addPos(0, 0, 0.2f);
-		prev = 1;
-	}
-	if (Input != NULL && Input->IsKeyDown(DIK_S))
-	{
-		snake.addPos(0, 0, -0.2f);
-		prev = 2; 
-	}
-	if (Input != NULL && Input->IsKeyDown(DIK_D))
-	{
-		snake.addPos(0.2f, 0, 0);
-		prev = 3;
-	}
-	if (Input != NULL && Input->IsKeyDown(DIK_A))
-	{
-		snake.addPos(-0.2f, 0, 0);
-		prev = 4;
-	}
-	if (!Input->IsKeyDown(DIK_A) && !Input->IsKeyDown(DIK_D) && !Input->IsKeyDown(DIK_S) && !Input->IsKeyDown(DIK_W))
-	{
-		switch (prev) {
-		case 1:
-			snake.addPos(0, 0, 0.2f);
-			break;
-		case 2:
-			snake.addPos(0, 0, -0.2f);
-			break;
-		case 3:
-			snake.addPos(0.2f, 0, 0);
-			break;
-		case 4:
-			snake.addPos(-0.2f, 0, 0);
-			break;
-		}
-	}
-}
+
 
 void AssignChar(_Object &Obj, char Char) {
 	switch (Char) {
@@ -899,10 +903,10 @@ bool InitScene()
 		Objs[i].Init();
 	}
 
-	for (int i = 0; i < snake.getTotalSize(); i++)
+	for (int i = 0; i < worm.getTotalSize(); i++)
 	{
-		snake.BodyParts[i].loadModel();
-		snake.BodyParts[i].Init();
+		worm.BodyParts[i].loadModel();
+		worm.BodyParts[i].Init();
 	}
 
 	//Set Primitive Topology
@@ -957,15 +961,15 @@ void UpdateScene()
 	TickCount = TickCountT;
 	Input->Update();
 
-	InputCont();
-	snake.Update(Objs[1], Objs[4]);
-	Objs[4].respawn(Objs[1], snake.BodyParts[0], 1);
+	worm.InputCont();
+	worm.Update(Objs[1], Objs[4]);
+	Objs[4].respawn(Objs[1], worm.BodyParts[0], 1);
 
 	//std::string framerateSTR = std::to_string(framerate.CalculateFrameRate());
 	//const char *framerateCHAR = framerateSTR.c_str();
-	std::string scoreSTR = std::to_string(snake.getScore());
+	std::string scoreSTR = std::to_string(worm.getScore());
 	const char *scoreCHAR = scoreSTR.c_str();
-	if (snake.getScore() > 10) {
+	if (worm.getScore() > 10) {
 		AssignChar(Objs[2], scoreCHAR[0]);
 		AssignChar(Objs[3], scoreCHAR[1]);
 	}
@@ -980,9 +984,9 @@ void UpdateScene()
 		Objs[i].Update();
 	}
 
-	for (int i = 0; i < snake.getTotalSize(); i++)
+	for (int i = 0; i < worm.getTotalSize(); i++)
 	{
-		snake.BodyParts[i].Update();
+		worm.BodyParts[i].Update();
 	}
 
 	BackgroundColour();
@@ -1018,9 +1022,9 @@ void DrawScene()
 		Objs[i].Draw();
 	}
 
-	for (int i = 0; i < snake.getTotalSize(); i++)
+	for (int i = 0; i < worm.getTotalSize(); i++)
 	{
-		snake.BodyParts[i].Draw();
+		worm.BodyParts[i].Draw();
 	}
 
 	//Present the backbuffer to the screen
