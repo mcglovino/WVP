@@ -229,10 +229,10 @@ public:
 		hr = Dev->CreateSamplerState(&sampDesc, &TexSamplerState);
 	}
 
-	void PreviousLocation() {
+	void PreviousLocation(float score) {
 		tickCountT = GetTickCount();
 		diffAccumulator += tickCountT - tickCount;
-		if (tickCountT - tickCount > 30)
+		if (tickCountT - tickCount > 30 - score/2)
 		{
 			tickCountT = GetTickCount();
 			tickCount = GetTickCount();
@@ -245,8 +245,6 @@ public:
 
 	void Update()
 	{
-		PreviousLocation();
-
 		if(rotate == 1)
 			rot -= rotSpeed;
 
@@ -331,11 +329,11 @@ public:
 
 	void respawn(_Object &other, _Object &sHead, bool timed) {
 		if (timed == 0) {
-			setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+			setTranslate((rand() % 45 - 22), 0.0f, (rand() % 45 - 22));
 			//so it doesnt spawn right next to the player or other teapot
 			while ((transX > sHead.getX() - 7.0f && transX < sHead.getX() + 7.0f && transZ > sHead.getZ() - 7.0f && transZ < sHead.getZ() + 7.0f) 
 				|| (transX > other.getX() - 2.0f && transX < other.getX() + 2.0f && transZ > other.getZ() - 2.0f && transZ < other.getZ() + 2.0f)){
-				setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+				setTranslate((rand() % 45 - 22), 0.0f, (rand() % 45 - 22));
 			}
 		}
 		else {
@@ -343,11 +341,11 @@ public:
 			diffAccumulator2 += tickCountT2 - tickCount2;
 			if (tickCountT2 - tickCount2 > 4000)
 			{
-				setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+				setTranslate((rand() % 45 - 22), 0.0f, (rand() % 45 - 22));
 				//so it doesnt spawn right next to the player or other teapot
 				while ((transX > sHead.getX() - 7.0f && transX < sHead.getX() + 7.0f && transZ > sHead.getZ() - 7.0f && transZ < sHead.getZ() + 7.0f)
 					|| (transX > other.getX() - 2.0f && transX < other.getX() + 2.0f && transZ > other.getZ() - 2.0f && transZ < other.getZ() + 2.0f)) {
-					setTranslate((rand() % 45 - 22), 0, (rand() % 45 - 22));
+					setTranslate((rand() % 45 - 22), 0.0f, (rand() % 45 - 22));
 				}
 
 				tickCount2 = GetTickCount();
@@ -499,9 +497,6 @@ public:
 			_Object newPart(SPOTS_TEXTURE_PATH, SPHERE_MODEL_PATH);
 			BodyParts.push_back(newPart);
 		}
-		//The last rendered model affects the amount of polygons all the others load, so this needs to be the player model
-		//it is set out of view, and in the movement script it is left out
-		//the game ends before this part is added on
 		BodyParts.push_back(newPart);
 
 		setLength(lengthT);
@@ -518,7 +513,7 @@ public:
 	{
 		return length;
 	}
-	int getScore()
+	float getScore()
 	{
 		return score;
 	}
@@ -574,38 +569,38 @@ public:
 	void InputCont() {
 		if (Input != NULL && Input->IsKeyDown(DIK_W))
 		{
-			addPos(0, 0, 0.25f);
+			addPos(0, 0,( 0.2f + (score/200)));
 			prev = 1;
 		}
 		if (Input != NULL && Input->IsKeyDown(DIK_S))
 		{
-			addPos(0, 0, -0.25f);
+			addPos(0, 0, -(0.2f + (score / 200)));
 			prev = 2;
 		}
 		if (Input != NULL && Input->IsKeyDown(DIK_D))
 		{
-			addPos(0.25f, 0, 0);
+			addPos((0.2f + (score / 200)), 0, 0);
 			prev = 3;
 		}
 		if (Input != NULL && Input->IsKeyDown(DIK_A))
 		{
-			addPos(-0.25f, 0, 0);
+			addPos(-(0.2f + (score / 200)), 0, 0);
 			prev = 4;
 		}
 		if (!Input->IsKeyDown(DIK_A) && !Input->IsKeyDown(DIK_D) && !Input->IsKeyDown(DIK_S) && !Input->IsKeyDown(DIK_W))
 		{
 			switch (prev) {
 			case 1:
-				addPos(0, 0, 0.25f);
+				addPos(0, 0, (0.2f + (score / 200)));
 				break;
 			case 2:
-				addPos(0, 0, -0.25f);
+				addPos(0, 0, -(0.2f + (score / 200)));
 				break;
 			case 3:
-				addPos(0.25f, 0, 0);
+				addPos((0.2f + (score / 200)), 0, 0);
 				break;
 			case 4:
-				addPos(-0.25f, 0, 0);
+				addPos(-(0.2f + (score / 200)), 0, 0);
 				break;
 			}
 		}
@@ -614,7 +609,7 @@ public:
 private:
 	int length;
 	int totalSize = 100;
-	int score;
+	float score;
 };
 
 //array of Objects
@@ -967,11 +962,13 @@ void UpdateScene()
 	//Run update script on all Objects
 	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
 	{
+		Objs[i].PreviousLocation(worm.getScore());
 		Objs[i].Update();
 	}
 
 	for (int i = 0; i < worm.getTotalSize(); i++)
 	{
+		worm.BodyParts[i].PreviousLocation(worm.getScore());
 		worm.BodyParts[i].Update();
 	}
 
