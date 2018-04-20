@@ -229,20 +229,6 @@ public:
 		hr = Dev->CreateSamplerState(&sampDesc, &TexSamplerState);
 	}
 
-	void PreviousLocation(float score) {
-		tickCountT = GetTickCount();
-		diffAccumulator += tickCountT - tickCount;
-		if (tickCountT - tickCount > 30 - score/2)
-		{
-			tickCountT = GetTickCount();
-			tickCount = GetTickCount();
-			diffAccumulator = 0;
-			transXp = transX;
-			transYp = transY;
-			transZp = transZ;
-		}
-	}
-
 	void Update()
 	{
 		if(rotate == 1)
@@ -337,9 +323,9 @@ public:
 			}
 		}
 		else {
-			tickCountT2 = GetTickCount();
-			diffAccumulator2 += tickCountT2 - tickCount2;
-			if (tickCountT2 - tickCount2 > 4000)
+			tickCountT = GetTickCount();
+			diffAccumulator += tickCountT - tickCount;
+			if (tickCountT - tickCount > 4000)
 			{
 				setTranslate((rand() % 45 - 22), 0.0f, (rand() % 45 - 22));
 				//so it doesnt spawn right next to the player or other teapot
@@ -348,7 +334,7 @@ public:
 					setTranslate((rand() % 45 - 22), 0.0f, (rand() % 45 - 22));
 				}
 
-				tickCount2 = GetTickCount();
+				tickCount = GetTickCount();
 			}
 		}
 	}
@@ -418,16 +404,6 @@ public:
 		transZ = Z;
 	}
 
-	float getXp() {
-		return transXp;
-	}
-	float getYp() {
-		return transYp;
-	}
-	float getZp() {
-		return transZp;
-	}
-
 	float getX() {
 		return transX;
 	}
@@ -457,16 +433,9 @@ public:
 	float transY = 0;
 	float transZ = 0;
 
-	float transXp = 0;
-	float transYp = 0;
-	float transZp = 0;
-
 	int tickCount = GetTickCount();
 	int tickCountT = GetTickCount();
 	int diffAccumulator = 0;
-	int tickCount2 = GetTickCount();
-	int tickCountT2 = GetTickCount();
-	int diffAccumulator2 = 0;
 
 	ID3D11ShaderResourceView* Texture;
 	ID3D11SamplerState* TexSamplerState;
@@ -484,17 +453,55 @@ public:
 	ID3D11InputLayout* vertLayout;
 };
 
+class _BodyPart : public _Object{
+public:
+	using _Object::_Object;
+	
+	void PreviousLocation(float score) {
+		tickCountT2 = GetTickCount();
+		diffAccumulator2 += tickCountT2 - tickCount2;
+		if (tickCountT2 - tickCount2 > 30 - score / 2)
+		{
+			tickCountT2 = GetTickCount();
+			tickCount2 = GetTickCount();
+			diffAccumulator2 = 0;
+			transXp = getX();
+			transYp = getY();
+			transZp = getZ();
+		}
+	}
+
+	float getXp() {
+		return transXp;
+	}
+	float getYp() {
+		return transYp;
+	}
+	float getZp() {
+		return transZp;
+	}
+
+private:
+	float transXp = 0;
+	float transYp = 0;
+	float transZp = 0;
+
+	int tickCount2 = GetTickCount();
+	int tickCountT2 = GetTickCount();
+	int diffAccumulator2 = 0;
+};
+
 
 class _Worm{
 public:
-	std::vector<_Object> BodyParts{};
+	std::vector<_BodyPart> BodyParts{};
 	//constructor
 	_Worm(int lengthT)
 	{
-		_Object newPart(SPOTS_TEXTURE_PATH, PLAYER_MODEL_PATH);
+		_BodyPart newPart(SPOTS_TEXTURE_PATH, PLAYER_MODEL_PATH);
 		BodyParts.push_back(newPart);
 		for (int i = 1; i < totalSize -1; i++) {
-			_Object newPart(SPOTS_TEXTURE_PATH, SPHERE_MODEL_PATH);
+			_BodyPart newPart(SPOTS_TEXTURE_PATH, SPHERE_MODEL_PATH);
 			BodyParts.push_back(newPart);
 		}
 		BodyParts.push_back(newPart);
@@ -962,7 +969,6 @@ void UpdateScene()
 	//Run update script on all Objects
 	for (int i = 0; i < sizeof(Objs) / sizeof(Objs[0]); i ++)
 	{
-		Objs[i].PreviousLocation(worm.getScore());
 		Objs[i].Update();
 	}
 
