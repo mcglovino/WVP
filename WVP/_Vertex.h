@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _VERTEX_H
+#define _VERTEX_H
 
 #include <d3d11.h>
 #include <d3dx11.h>
@@ -15,3 +16,5 @@ public:
 	_Vertex(float x, float y, float z,
 		float u, float v);
 };
+
+#endif

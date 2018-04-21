@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _FRAMERATE_H
+#define _FRAMERATE_H
 
 #include <windows.h>
 
@@ -15,3 +16,4 @@ public:
 	~_FrameRate();
 };
 
+#endif

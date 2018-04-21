@@ -324,7 +324,6 @@ public:
 		}
 		else {
 			tickCountT = GetTickCount();
-			diffAccumulator += tickCountT - tickCount;
 			if (tickCountT - tickCount > 4000)
 			{
 				setTranslate((rand() % 45 - 22), 0.0f, (rand() % 45 - 22));
@@ -435,7 +434,6 @@ public:
 
 	int tickCount = GetTickCount();
 	int tickCountT = GetTickCount();
-	int diffAccumulator = 0;
 
 	ID3D11ShaderResourceView* Texture;
 	ID3D11SamplerState* TexSamplerState;
@@ -459,12 +457,10 @@ public:
 	
 	void PreviousLocation(float score) {
 		tickCountT2 = GetTickCount();
-		diffAccumulator2 += tickCountT2 - tickCount2;
 		if (tickCountT2 - tickCount2 > 30 - score / 2)
 		{
-			tickCountT2 = GetTickCount();
+			//tickCountT2 = GetTickCount();
 			tickCount2 = GetTickCount();
-			diffAccumulator2 = 0;
 			transXp = getX();
 			transYp = getY();
 			transZp = getZ();
@@ -488,7 +484,6 @@ private:
 
 	int tickCount2 = GetTickCount();
 	int tickCountT2 = GetTickCount();
-	int diffAccumulator2 = 0;
 };
 
 
@@ -551,6 +546,7 @@ public:
 			BodyParts[i].setTranslate(0, 100, 0);
 		}
 
+		Evil.respawn(Tea, BodyParts[0], 1);
 		//evil teapot teapot
 		if (BodyParts[0].getX() > Evil.getX() - 1.5f && BodyParts[0].getX() < Evil.getX() + 1.5f && BodyParts[0].getZ() > Evil.getZ() - 1.5f && BodyParts[0].getZ() < Evil.getZ() + 1.5f) {
 			//end game
@@ -951,7 +947,6 @@ void UpdateScene()
 
 	worm.InputCont();
 	worm.Update(Objs[1], Objs[2]);
-	Objs[2].respawn(Objs[1], worm.BodyParts[0], 1);
 
 	//std::string framerateSTR = std::to_string(framerate.CalculateFrameRate());
 	//const char *framerateCHAR = framerateSTR.c_str();
